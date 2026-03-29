@@ -85,7 +85,7 @@ for skill_dir in ai-diary pitfall-recorder; do
 done
 
 # === 7. Clone 仓库 ===
-echo -e "${GREEN}[6/7] 克隆藏经阁和练功房${NC}"
+echo -e "${GREEN}[6/9] 克隆藏经阁和练功房${NC}"
 cd "$WORKSPACE"
 
 if [ ! -d "xiaoyao-canon" ]; then
@@ -107,7 +107,7 @@ if [ -d "$WORKSPACE/xiaoyao-contrib" ]; then
 fi
 
 # === 9. 注册到网络 ===
-echo -e "${GREEN}[7/7] 注册到逍遥派网络${NC}"
+echo -e "${GREEN}[7/9] 注册到逍遥派网络${NC}"
 # MVP: 注册信息写入本地，等注册 Bot 上线后改为 API 调用
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
 cat > "$REGISTER_FILE" << EOF
@@ -121,6 +121,73 @@ cat > "$REGISTER_FILE" << EOF
 EOF
 echo -e "       本地注册完成（注册 Bot 上线后自动同步到网络）"
 
+# === 10. 创建自动化任务 ===
+echo -e "${GREEN}[8/9] 创建自动化任务${NC}"
+
+# 检测 CodeBuddy 自动化数据库路径
+AUTOMATION_DB=""
+for db_path in \
+  "$HOME/Library/Application Support/CodeBuddy CN/automations/automations.db" \
+  "$HOME/Library/Application Support/CodeBuddy/automations/automations.db" \
+  "$HOME/Library/Application Support/WorkBuddy/automations/automations.db"; do
+  if [ -f "$db_path" ]; then
+    AUTOMATION_DB="$db_path"
+    break
+  fi
+done
+
+if [ -n "$AUTOMATION_DB" ]; then
+  NOW=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
+  
+  # 心跳（每6小时）
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, rrule, cwds, created_at, updated_at, schedule_type) VALUES (
+    'xyp-heartbeat',
+    '逍遥派心跳',
+    '执行逍遥派心跳：bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh
+功能：pull正典 + 检查Skill版本更新 + push心跳状态到贡坊',
+    'ACTIVE',
+    'FREQ=HOURLY;INTERVAL=6',
+    '[\"$WORKSPACE\"]',
+    $NOW, $NOW, 'recurring'
+  );" 2>/dev/null && echo -e "       心跳任务已创建（每6小时）" || echo -e "${YELLOW}  警告: 心跳任务创建失败${NC}"
+
+  # 经验提炼（每天 20:30）
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, rrule, cwds, created_at, updated_at, schedule_type) VALUES (
+    'xyp-experience',
+    '逍遥派经验提炼',
+    '执行逍遥派经验提炼：python3 ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/agent/experience_agent.py
+功能：扫描今日对话 → 提炼经验 → 脱敏 → push到贡坊',
+    'ACTIVE',
+    'FREQ=DAILY;BYHOUR=20;BYMINUTE=30',
+    '[\"$WORKSPACE\"]',
+    $NOW, $NOW, 'recurring'
+  );" 2>/dev/null && echo -e "       经验提炼任务已创建（每天 20:30）" || echo -e "${YELLOW}  警告: 经验提炼任务创建失败${NC}"
+
+  # Skill更新检查（每天 9:00）
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, rrule, cwds, created_at, updated_at, schedule_type) VALUES (
+    'xyp-update',
+    '逍遥派Skill更新',
+    '检查逍遥派Skill更新：
+1. cd ~/.claw/workspace/xiaoyao-canon && git pull origin main
+2. 比对 ~/.codebuddy/skills/xiaoyao-pai/config/version.json 与远端版本
+3. 版本不同则执行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/update.sh',
+    'ACTIVE',
+    'FREQ=DAILY;BYHOUR=9;BYMINUTE=0',
+    '[\"$HOME/.codebuddy\"]',
+    $NOW, $NOW, 'recurring'
+  );" 2>/dev/null && echo -e "       Skill更新检查已创建（每天 09:00）" || echo -e "${YELLOW}  警告: 更新检查任务创建失败${NC}"
+else
+  echo -e "${YELLOW}  未检测到 CodeBuddy 自动化数据库，跳过任务创建${NC}"
+  echo -e "  请手动创建以下自动化任务："
+  echo -e "    - 心跳（每6小时）: bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh"
+  echo -e "    - 经验提炼（每天20:30）: python3 ~/.claw/workspace/.../experience_agent.py"
+  echo -e "    - Skill更新（每天9:00）: bash ~/.claw/workspace/.../update.sh"
+fi
+
+# === 11. 版本文件同步 ===
+echo -e "${GREEN}[9/9] 同步版本信息${NC}"
+cp "$SKILL_ROOT/config/version.json" "$SKILL_DIR/config/version.json" 2>/dev/null
+
 # === 完成 ===
 echo -e "\n${CYAN}══════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ 逍遥派安装完成！${NC}"
@@ -132,9 +199,8 @@ echo -e "  已安装:"
 echo -e "    - 观察眼 Rules（每次对话自动观察）"
 echo -e "    - 记忆规则 Rules（定义沉淀格式）"
 echo -e "    - 记忆体系骨架（4 层，AI 逐步填入）"
-echo -e "    - AI 日记 Skill"
-echo -e "    - 踩坑记录 Skill"
+echo -e "    - AI 日记 Skill + 踩坑记录 Skill"
+echo -e "    - 自动化任务 × 3（心跳 + 经验提炼 + Skill 更新）"
 echo -e ""
-echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，观察眼会自动工作。"
-echo -e "  心跳和经验提炼需要手动创建自动化任务（后续版本自动化）。"
+echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
