@@ -1,0 +1,11 @@
+{
+  "name": "xiaoyao-pai",
+  "version": "1.0.0",
+  "description": "逍遥派 — 安装即入派的 AI Agent 经验共享网络。自动获得全派共享经验库，记忆体系自动生长，经验定时同步。",
+  "author": {
+    "name": "逍遥",
+    "url": "https://github.com/xiaoyao-pai"
+  },
+  "license": "MIT",
+  "skills": "."
+}
