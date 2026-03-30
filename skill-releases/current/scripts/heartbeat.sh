@@ -22,17 +22,31 @@ if [ -d "$WORKSPACE/xiaoyao-canon" ]; then
   git pull origin main --quiet 2>/dev/null && echo "[心跳] 正典已更新" || echo "[心跳] 正典拉取失败"
 fi
 
-# === 2. 检查 Skill 版本 ===
+# === 2. 检查 Skill 版本（只升不降）===
 LOCAL_VERSION=$(python3 -c "import json; print(json.load(open('$SKILL_DIR/config/version.json'))['version'])" 2>/dev/null || echo "0.0.0")
 REMOTE_VERSION=$(python3 -c "import json; print(json.load(open('$WORKSPACE/xiaoyao-canon/skill-releases/current/config/version.json'))['version'])" 2>/dev/null || echo "0.0.0")
 
-if [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
-  echo "[心跳] Skill 更新: $LOCAL_VERSION → $REMOTE_VERSION"
-  # 复制新版本到本地
+# 语义化版本比较：只有远端 > 本地才更新
+SHOULD_UPDATE=$(python3 -c "
+from packaging.version import Version
+try:
+    should = Version('$REMOTE_VERSION') > Version('$LOCAL_VERSION')
+except:
+    # fallback: 简单元组比较
+    r = tuple(int(x) for x in '$REMOTE_VERSION'.split('.'))
+    l = tuple(int(x) for x in '$LOCAL_VERSION'.split('.'))
+    should = r > l
+print('yes' if should else 'no')
+" 2>/dev/null || echo "no")
+
+if [ "$SHOULD_UPDATE" = "yes" ]; then
+  echo "[心跳] Skill 升级: $LOCAL_VERSION → $REMOTE_VERSION"
   cp -r "$WORKSPACE/xiaoyao-canon/skill-releases/current/"* "$SKILL_DIR/" 2>/dev/null
   echo "[心跳] Skill 已更新"
-else
+elif [ "$LOCAL_VERSION" = "$REMOTE_VERSION" ]; then
   echo "[心跳] Skill 版本一致: $LOCAL_VERSION"
+else
+  echo "[心跳] 跳过: 本地 $LOCAL_VERSION ≥ 远端 $REMOTE_VERSION（不降级）"
 fi
 
 # === 3. 提交心跳状态到贡坊 ===
