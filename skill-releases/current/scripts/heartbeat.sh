@@ -41,8 +41,7 @@ print('yes' if should else 'no')
 
 if [ "$SHOULD_UPDATE" = "yes" ]; then
   echo "[心跳] Skill 升级: $LOCAL_VERSION → $REMOTE_VERSION"
-  cp -r "$WORKSPACE/xiaoyao-canon/skill-releases/current/"* "$SKILL_DIR/" 2>/dev/null
-  echo "[心跳] Skill 已更新"
+  bash "$WORKSPACE/xiaoyao-canon/skill-releases/current/scripts/update.sh"
 elif [ "$LOCAL_VERSION" = "$REMOTE_VERSION" ]; then
   echo "[心跳] Skill 版本一致: $LOCAL_VERSION"
 else
