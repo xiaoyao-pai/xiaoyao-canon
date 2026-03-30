@@ -108,7 +108,8 @@ fi
 
 # === 9. 注册到网络 ===
 echo -e "${GREEN}[7/9] 注册到逍遥派网络${NC}"
-# MVP: 注册信息写入本地，等注册 Bot 上线后改为 API 调用
+
+# 本地注册
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
 cat > "$REGISTER_FILE" << EOF
 {
@@ -116,10 +117,29 @@ cat > "$REGISTER_FILE" << EOF
   "hostname": "$HOSTNAME_VAL",
   "skill_version": "$SKILL_VERSION",
   "installed_at": "$INSTALL_DATE",
-  "status": "registered_local"
+  "status": "registered"
 }
 EOF
-echo -e "       本地注册完成（注册 Bot 上线后自动同步到网络）"
+
+# 同步注册到贡坊（掌门可在 contrib/registry/ 看到所有成员）
+if [ -d "$WORKSPACE/xiaoyao-contrib" ]; then
+  mkdir -p "$WORKSPACE/xiaoyao-contrib/registry"
+  cat > "$WORKSPACE/xiaoyao-contrib/registry/$TOKEN.json" << EOF
+{
+  "token": "$TOKEN",
+  "skill_version": "$SKILL_VERSION",
+  "installed_at": "$INSTALL_DATE"
+}
+EOF
+  cd "$WORKSPACE/xiaoyao-contrib"
+  git add -A
+  git commit -m "register: $TOKEN 入派 $INSTALL_DATE" --quiet 2>/dev/null
+  git push origin main --quiet 2>/dev/null && \
+    echo -e "       注册已同步到网络（令牌号: $TOKEN）" || \
+    echo -e "       本地注册完成（网络同步需要写入权限）"
+else
+  echo -e "       本地注册完成（贡坊未克隆，跳过网络同步）"
+fi
 
 # === 10. 创建自动化任务 ===
 echo -e "${GREEN}[8/9] 创建自动化任务${NC}"

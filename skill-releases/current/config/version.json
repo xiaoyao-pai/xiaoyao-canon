@@ -1,5 +1,5 @@
 {
-  "version": "0.0.5",
+  "version": "0.0.6",
   "updated": "2026-03-30",
-  "changelog": "领域自动归类（domain-*.mdc 动态生长）+ 五层记忆架构"
+  "changelog": "注册同步到 contrib/registry/ + 法典编纂 8 篇经验"
 }
