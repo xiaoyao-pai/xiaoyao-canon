@@ -148,6 +148,7 @@ def main():
 
     config = get_node_config()
     token = config["token"]
+    api_base = config.get("api_base", "http://119.29.181.188/xiaoyao/api")
     print(f"[经验提炼] 令牌号: {token}")
 
     # 收集数据
@@ -164,34 +165,35 @@ def main():
         print("[经验提炼] 今日无有效活动，跳过")
         return
 
-    # 保存到贡坊目录
+    # 保存到本地
     today = datetime.now().strftime("%Y-%m-%d")
     contrib_dir = Path.home() / ".claw" / "workspace" / "xiaoyao-contrib" / "contributions" / token
     contrib_dir.mkdir(parents=True, exist_ok=True)
 
     output_file = contrib_dir / f"{today}-experience.md"
     output_file.write_text(experience, encoding="utf-8")
-    print(f"[经验提炼] 已保存: {output_file}")
+    print(f"[经验提炼] 已保存本地: {output_file}")
 
-    # 尝试 git push
-    contrib_root = Path.home() / ".claw" / "workspace" / "xiaoyao-contrib"
-    if (contrib_root / ".git").exists():
-        try:
-            subprocess.run(["git", "add", "-A"], cwd=contrib_root, capture_output=True)
-            subprocess.run(
-                ["git", "commit", "-m", f"experience: {token} {today}"],
-                cwd=contrib_root, capture_output=True
-            )
-            result = subprocess.run(
-                ["git", "push", "origin", "main"],
-                cwd=contrib_root, capture_output=True, text=True
-            )
-            if result.returncode == 0:
-                print("[经验提炼] 已推送到贡坊")
-            else:
-                print(f"[经验提炼] 推送失败: {result.stderr[:200]}")
-        except Exception as e:
-            print(f"[经验提炼] Git 操作失败: {e}")
+    # 提交到注册中心 API
+    try:
+        import urllib.request
+        payload = json.dumps({
+            "token": token,
+            "filename": f"{today}-experience.md",
+            "content": experience
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            f"{api_base}/contribute",
+            data=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        resp = urllib.request.urlopen(req, timeout=30)
+        if resp.status == 200:
+            print("[经验提炼] 已提交到逍遥派网络")
+        else:
+            print(f"[经验提炼] 提交返回 {resp.status}")
+    except Exception as e:
+        print(f"[经验提炼] 网络提交失败（本地已保存）: {e}")
 
     print("[经验提炼] 完成")
 

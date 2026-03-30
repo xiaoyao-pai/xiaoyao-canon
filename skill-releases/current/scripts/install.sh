@@ -14,10 +14,13 @@ echo -e "${CYAN}═════════════════════�
 
 # === 1. 生成令牌号 ===
 TOKEN="XYP-$(openssl rand -hex 2 | tr '[:lower:]' '[:upper:]')"
-SKILL_VERSION="1.0.2"
+DEVICE_NAME=$(hostname | head -c 50)
+SKILL_VERSION="1.1.0"
 INSTALL_DATE=$(date +%Y-%m-%d)
+API_BASE="http://119.29.181.188/xiaoyao/api"
 
 echo -e "\n${GREEN}[1/7] 生成令牌号${NC}: $TOKEN"
+echo -e "       设备名称: $DEVICE_NAME"
 
 # === 2. 配置路径 ===
 CODEBUDDY_DIR="$HOME/.codebuddy"
@@ -37,15 +40,18 @@ mkdir -p "$SKILL_DIR/config"
 cat > "$SKILL_DIR/config/node.json" << EOF
 {
   "token": "$TOKEN",
+  "device_name": "$DEVICE_NAME",
   "created": "$INSTALL_DATE",
-  "skill_version": "$SKILL_VERSION"
+  "skill_version": "$SKILL_VERSION",
+  "api_base": "$API_BASE"
 }
 EOF
 
 cat > "$SKILL_DIR/config/network.json" << EOF
 {
   "canon": "https://github.com/xiaoyao-pai/xiaoyao-canon.git",
-  "contrib": "https://github.com/xiaoyao-pai/xiaoyao-contrib.git"
+  "contrib": "https://github.com/xiaoyao-pai/xiaoyao-contrib.git",
+  "api_base": "$API_BASE"
 }
 EOF
 
@@ -118,10 +124,9 @@ cat > "$REGISTER_FILE" << EOF
 EOF
 
 # 9b. 注册到逍遥派中心（云服务器中转）
-REGISTER_API="http://119.29.181.188/xiaoyao/api/register"
-REGISTER_RESP=$(curl -s -m 10 -X POST "$REGISTER_API" \
+REGISTER_RESP=$(curl -s -m 10 -X POST "$API_BASE/register" \
   -H "Content-Type: application/json" \
-  -d "{\"token\":\"$TOKEN\",\"skill_version\":\"$SKILL_VERSION\",\"installed_at\":\"$INSTALL_DATE\"}" 2>/dev/null)
+  -d "{\"token\":\"$TOKEN\",\"device_name\":\"$DEVICE_NAME\",\"skill_version\":\"$SKILL_VERSION\",\"installed_at\":\"$INSTALL_DATE\"}" 2>/dev/null)
 
 if echo "$REGISTER_RESP" | grep -q '"status"'; then
   echo -e "       网络注册完成 ✅"

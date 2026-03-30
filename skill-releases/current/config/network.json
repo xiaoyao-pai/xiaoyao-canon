@@ -1,4 +1,5 @@
 {
   "canon": "https://github.com/xiaoyao-pai/xiaoyao-canon.git",
-  "contrib": "https://github.com/xiaoyao-pai/xiaoyao-contrib.git"
+  "contrib": "https://github.com/xiaoyao-pai/xiaoyao-contrib.git",
+  "api_base": "http://119.29.181.188/xiaoyao/api"
 }

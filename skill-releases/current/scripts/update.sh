@@ -79,6 +79,12 @@ for tpl in 00-核心身份.mdc 01-认知框架.mdc 02-行为习惯.mdc 03-技术
   fi
 done
 
+# 领域层文件保护（domain-*.mdc 由观察眼自动创建，永远不覆盖不删除）
+DOMAIN_COUNT=$(ls "$MEMORY_DIR"/domain-*.mdc 2>/dev/null | wc -l | tr -d ' ')
+if [ "$DOMAIN_COUNT" -gt 0 ]; then
+  echo "  ✓ 保留: $DOMAIN_COUNT 个领域层文件（domain-*.mdc）"
+fi
+
 # === 子 Skill 升级（同理，有用户自定义则不覆盖）===
 echo "[更新] 检查子 Skill..."
 for skill_name in xiaoyao-ai-diary xiaoyao-pitfall-recorder; do
@@ -108,4 +114,4 @@ done
 
 echo ""
 echo "[更新] ✅ 升级完成: $LOCAL_VER → $REMOTE_VER"
-echo "  保护项: node.json / registration.json / 有数据的记忆文件 / 用户自定义的子Skill"
+echo "  保护项: node.json / registration.json / 有数据的记忆文件 / domain-*.mdc / 用户自定义的子Skill"
