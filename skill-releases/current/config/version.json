@@ -1,5 +1,5 @@
 {
-  "version": "1.0.1",
+  "version": "1.0.2",
   "updated": "2026-03-30",
-  "changelog": "修复注册同步机制：安装时自动推送注册记录到 contrib/registry/"
+  "changelog": "注册改为云服务器中转API，无需Git权限即可自动注册"
 }
