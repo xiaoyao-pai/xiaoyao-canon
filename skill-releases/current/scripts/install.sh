@@ -15,7 +15,7 @@ echo -e "${CYAN}═════════════════════�
 # === 1. 生成令牌号 ===
 TOKEN="XYP-$(openssl rand -hex 2 | tr '[:lower:]' '[:upper:]')"
 HOSTNAME_VAL=$(hostname)
-SKILL_VERSION="1.0.0"
+SKILL_VERSION="0.0.2"
 INSTALL_DATE=$(date +%Y-%m-%d)
 
 echo -e "\n${GREEN}[1/7] 生成令牌号${NC}: $TOKEN"
