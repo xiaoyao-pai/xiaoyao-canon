@@ -1,6 +1,6 @@
 # Skill 更新日志
 
-## v1.1.0 (2026-03-30)
+## v0.0.6 (2026-03-30)
 - 注册/心跳/经验提交全部走云服务器 API（无需 Git 权限）
 - 注册支持设备名称（device_name）
 - 新增 api_base 配置到 node.json 和 network.json
