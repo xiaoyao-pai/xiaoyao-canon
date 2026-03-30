@@ -14,7 +14,7 @@ echo -e "${CYAN}═════════════════════�
 
 # === 1. 生成令牌号 ===
 TOKEN="XYP-$(openssl rand -hex 2 | tr '[:lower:]' '[:upper:]')"
-DEVICE_NAME=$(hostname | head -c 50)
+DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
 SKILL_VERSION="0.0.6"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
