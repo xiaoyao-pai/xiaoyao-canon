@@ -1,5 +1,5 @@
 {
-  "version": "0.0.6",
+  "version": "1.0.1",
   "updated": "2026-03-30",
-  "changelog": "注册同步到 contrib/registry/ + 法典编纂 8 篇经验"
+  "changelog": "修复注册同步机制：安装时自动推送注册记录到 contrib/registry/"
 }
