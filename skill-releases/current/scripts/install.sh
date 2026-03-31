@@ -87,8 +87,20 @@ for skill_dir in ai-diary pitfall-recorder; do
   fi
 done
 
-# === 7. 注册到网络 ===
-echo -e "${GREEN}[6/8] 注册到逍遥派网络${NC}"
+# === 7. 克隆配置体系源（用于后续自动更新）===
+echo -e "${GREEN}[6/9] 克隆配置体系源${NC}"
+cd "$WORKSPACE"
+
+if [ ! -d "xiaoyao-canon" ]; then
+  git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-canon.git 2>/dev/null && \
+    echo -e "       配置体系源已克隆" || \
+    echo -e "${YELLOW}  警告: 克隆失败（不影响安装，后续心跳会重试）${NC}"
+else
+  echo -e "       配置体系源已存在"
+fi
+
+# === 8. 注册到网络 ===
+echo -e "${GREEN}[7/9] 注册到逍遥派网络${NC}"
 
 # 7a. 本地注册
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
@@ -113,8 +125,8 @@ else
   echo -e "       ${YELLOW}提示: 网络注册暂时不可用，不影响使用${NC}"
 fi
 
-# === 8. 下载正典经验（需注册后才能访问）===
-echo -e "${GREEN}[7/8] 下载逍遥派正典经验${NC}"
+# === 9. 下载正典经验（需注册后才能访问）===
+echo -e "${GREEN}[8/9] 下载逍遥派正典经验${NC}"
 
 CANON_LOCAL="$WORKSPACE/xiaoyao-canon-data"
 mkdir -p "$CANON_LOCAL"
@@ -145,8 +157,8 @@ else
   echo -e "       ${YELLOW}正典下载失败（不影响核心功能，后续心跳会重试）${NC}"
 fi
 
-# === 9. 创建自动化任务 ===
-echo -e "${GREEN}[8/8] 创建自动化任务${NC}"
+# === 10. 创建自动化任务 ===
+echo -e "${GREEN}[9/9] 创建自动化任务${NC}"
 
 # 自动化任务数据库路径（CodeBuddy CN）
 AUTOMATION_DB=""
@@ -165,33 +177,33 @@ if [ -z "$AUTOMATION_DB" ]; then
 else
   NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
 
-  # 心跳任务（每天 13:00 和 19:00）
+  # 午间心跳（12:00）：正典更新 + 配置体系更新 + 经验提炼 + 心跳上报
   sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
-      'xiaoyao-heartbeat',
-      '逍遥派心跳',
-      '执行逍遥派心跳任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会拉取正典最新内容、检查 Skill 版本更新、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
+      'xiaoyao-sync-noon',
+      '逍遥派同步（午间）',
+      '执行逍遥派心跳同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验并上传、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
       '[\"$HOME\"]',
-      'FREQ=DAILY;BYHOUR=13;BYMINUTE=0',
+      'FREQ=DAILY;BYHOUR=12;BYMINUTE=0',
       $NOW_MS,
       $NOW_MS,
       'recurring'
-    );" 2>/dev/null && echo -e "  已创建: 逍遥派心跳（每天 13:00）" || echo -e "  ${YELLOW}心跳任务已存在或创建失败${NC}"
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-午间（每天 12:00）" || echo -e "  ${YELLOW}午间任务已存在或创建失败${NC}"
 
-  # 经验提炼任务（每天 21:00）
+  # 傍晚心跳（18:00）：同上
   sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
-      'xiaoyao-experience',
-      '逍遥派经验提炼',
-      '执行逍遥派经验提炼：运行 python3 ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/agent/experience_agent.py，该脚本会读取今日 AI 对话记录，提炼有价值的经验，脱敏后提交到逍遥派网络。直接运行脚本即可。',
+      'xiaoyao-sync-evening',
+      '逍遥派同步（傍晚）',
+      '执行逍遥派心跳同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验并上传、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
       '[\"$HOME\"]',
-      'FREQ=DAILY;BYHOUR=21;BYMINUTE=0',
+      'FREQ=DAILY;BYHOUR=18;BYMINUTE=0',
       $NOW_MS,
       $NOW_MS,
       'recurring'
-    );" 2>/dev/null && echo -e "  已创建: 逍遥派经验提炼（每天 21:00）" || echo -e "  ${YELLOW}经验提炼任务已存在或创建失败${NC}"
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-傍晚（每天 18:00）" || echo -e "  ${YELLOW}傍晚任务已存在或创建失败${NC}"
 
   echo -e "       自动化任务就绪"
 fi
@@ -208,8 +220,7 @@ echo -e "    - 观察眼 Rules（每次对话自动观察）"
 echo -e "    - 记忆规则 Rules（定义沉淀格式）"
 echo -e "    - 记忆体系骨架（5 层，AI 逐步填入）"
 echo -e "    - AI 日记 + 踩坑记录 Skill"
-echo -e "    - 心跳任务（每天自动同步最新经验）"
-echo -e "    - 经验提炼任务（每天自动提炼对话经验）"
+echo -e "    - 同步任务 × 2（12:00 / 18:00 自动：正典更新 + 经验提炼 + 心跳）"
 echo -e ""
 echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
