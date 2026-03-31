@@ -49,34 +49,108 @@ echo "[更新] 升级系统 Rules..."
 cp "$REMOTE_DIR/rules/xiaoyao-observer.mdc" "$RULES_DIR/" 2>/dev/null
 cp "$REMOTE_DIR/rules/xiaoyao-memory.mdc"   "$RULES_DIR/" 2>/dev/null
 
-# === 类型 3：合并升级（用户数据文件，只补充不覆盖）===
-echo "[更新] 检查记忆模板（不覆盖已有数据）..."
+# === 类型 3：融合升级（用户数据文件，保留数据 + 更新框架）===
+echo "[更新] 检查记忆文件（融合模式：保留数据 + 更新框架）..."
 MEMORY_DIR="$RULES_DIR/memory"
 mkdir -p "$MEMORY_DIR"
 
-for tpl in 00-核心身份.mdc 01-认知框架.mdc 02-行为习惯.mdc 03-技术画像.mdc; do
-  LOCAL_FILE="$MEMORY_DIR/$tpl"
-  REMOTE_FILE="$REMOTE_DIR/templates/memory/$tpl"
-  
+# 融合函数：用 Python 精确提取用户数据，注入新模板框架
+merge_memory_file() {
+  local LOCAL_FILE="$1"
+  local REMOTE_FILE="$2"
+  local FILENAME="$3"
+
   if [ ! -f "$LOCAL_FILE" ]; then
-    # 本地不存在 → 直接复制（新安装或文件被删）
     cp "$REMOTE_FILE" "$LOCAL_FILE" 2>/dev/null
-    echo "  + 新建: $tpl"
-  else
-    # 本地已存在 → 检查是否有用户数据
-    # 判断标准：观察记录区是否有实际条目（非注释、非空行）
-    HAS_DATA=$(grep -c "^\- \[20" "$LOCAL_FILE" 2>/dev/null || echo "0")
-    
-    if [ "$HAS_DATA" -eq 0 ]; then
-      # 无用户数据 → 可以安全覆盖（还是空模板）
-      cp "$REMOTE_FILE" "$LOCAL_FILE" 2>/dev/null
-      echo "  ↻ 更新空模板: $tpl"
-    else
-      # 有用户数据 → 保留！只更新模板的结构部分（frontmatter + 分区标题）
-      echo "  ✓ 保留: $tpl（含 $HAS_DATA 条观察记录）"
-      # 未来可以做更精细的结构合并，目前保守策略：不动
-    fi
+    echo "  + 新建: $FILENAME"
+    return
   fi
+
+  # 用 Python 做精确融合
+  python3 -c "
+import re, sys
+
+local_path = '$LOCAL_FILE'
+remote_path = '$REMOTE_FILE'
+
+# 读取本地文件
+with open(local_path, 'r', encoding='utf-8') as f:
+    local_lines = f.readlines()
+
+# 提取用户数据：非空行、非注释行、非 frontmatter、非标题行
+user_data = {}  # section_name -> [lines]
+current_section = '_top'
+in_frontmatter = False
+fm_count = 0
+
+for line in local_lines:
+    stripped = line.rstrip()
+    # frontmatter 检测
+    if stripped == '---':
+        fm_count += 1
+        if fm_count <= 2:
+            continue
+    if fm_count < 2:
+        continue
+    # 分区标题检测
+    if stripped.startswith('## '):
+        current_section = stripped.lstrip('# ').strip()
+        if current_section not in user_data:
+            user_data[current_section] = []
+        continue
+    if stripped.startswith('# ') and not stripped.startswith('## '):
+        continue
+    # 跳过空行、注释行、旧模板占位符
+    if not stripped or stripped.startswith('<!--') or stripped.startswith('> '):
+        continue
+    # 跳过旧模板默认占位文字
+    if stripped in ('（AI 观察后自动填入）', '(AI will fill in)', '（待填入）'):
+        continue
+    # 这是用户数据
+    if current_section not in user_data:
+        user_data[current_section] = []
+    user_data[current_section].append(line.rstrip())
+
+# 统计总数据量
+total_data = sum(len(v) for v in user_data.values())
+if total_data == 0:
+    # 无数据，直接用新模板
+    import shutil
+    shutil.copy2(remote_path, local_path)
+    print(f'  ↻ 更新空模板: $FILENAME')
+    sys.exit(0)
+
+# 读取新模板
+with open(remote_path, 'r', encoding='utf-8') as f:
+    template = f.read()
+
+# 对每个有数据的分区，在模板对应位置追加数据
+for section, lines in user_data.items():
+    if not lines:
+        continue
+    # 找到模板中对应的分区位置（## section_name 之后的注释行之后）
+    pattern = r'(## ' + re.escape(section) + r'.*?\n)((?:<!--.*?-->\s*\n)*)'
+    match = re.search(pattern, template)
+    if match:
+        insert_pos = match.end()
+        data_block = '\n'.join(lines) + '\n'
+        template = template[:insert_pos] + data_block + template[insert_pos:]
+    else:
+        # 分区在新模板中不存在，追加到末尾
+        template = template.rstrip() + '\n\n## ' + section + '\n' + '\n'.join(lines) + '\n'
+
+with open(local_path, 'w', encoding='utf-8') as f:
+    f.write(template)
+
+print(f'  ⊕ 融合: $FILENAME（框架更新 + 保留 {total_data} 条记录，覆盖 {len(user_data)} 个分区）')
+" 2>/dev/null || {
+    # Python 融合失败，保守策略：不动
+    echo "  ✓ 保留: $FILENAME（融合失败，保守保留原文件）"
+  }
+}
+
+for tpl in 00-核心身份.mdc 01-认知框架.mdc 02-行为习惯.mdc 03-技术画像.mdc; do
+  merge_memory_file "$MEMORY_DIR/$tpl" "$REMOTE_DIR/templates/memory/$tpl" "$tpl"
 done
 
 # 领域层文件保护（domain-*.mdc 由观察眼自动创建，永远不覆盖不删除）
