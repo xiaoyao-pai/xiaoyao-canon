@@ -87,32 +87,10 @@ for skill_dir in ai-diary pitfall-recorder; do
   fi
 done
 
-# === 7. Clone 仓库 ===
-echo -e "${GREEN}[6/7] 克隆藏经阁和练功房${NC}"
-cd "$WORKSPACE"
+# === 7. 注册到网络 ===
+echo -e "${GREEN}[6/8] 注册到逍遥派网络${NC}"
 
-if [ ! -d "xiaoyao-canon" ]; then
-  git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-canon.git 2>/dev/null && \
-    echo -e "       正典（canon）已克隆" || \
-    echo -e "${YELLOW}  警告: 正典克隆失败（可能需要先获得权限）${NC}"
-fi
-
-if [ ! -d "xiaoyao-contrib" ]; then
-  git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-contrib.git 2>/dev/null && \
-    echo -e "       贡坊（contrib）已克隆" || \
-    echo -e "${YELLOW}  警告: 贡坊克隆失败（可能需要先获得权限）${NC}"
-fi
-
-# === 8. 创建贡献目录 ===
-if [ -d "$WORKSPACE/xiaoyao-contrib" ]; then
-  mkdir -p "$WORKSPACE/xiaoyao-contrib/contributions/$TOKEN"
-  echo -e "       贡献目录已创建: contributions/$TOKEN"
-fi
-
-# === 9. 注册到网络 ===
-echo -e "${GREEN}[7/8] 注册到逍遥派网络${NC}"
-
-# 9a. 本地注册
+# 7a. 本地注册
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
 cat > "$REGISTER_FILE" << EOF
 {
@@ -123,7 +101,7 @@ cat > "$REGISTER_FILE" << EOF
 }
 EOF
 
-# 9b. 注册到逍遥派中心（云服务器中转）
+# 7b. 注册到逍遥派中心
 REGISTER_RESP=$(curl -s -m 10 -X POST "$API_BASE/register" \
   -H "Content-Type: application/json" \
   -d "{\"token\":\"$TOKEN\",\"device_name\":\"$DEVICE_NAME\",\"skill_version\":\"$SKILL_VERSION\",\"installed_at\":\"$INSTALL_DATE\"}" 2>/dev/null)
@@ -135,7 +113,39 @@ else
   echo -e "       ${YELLOW}提示: 网络注册暂时不可用，不影响使用${NC}"
 fi
 
-# === 10. 创建自动化任务 ===
+# === 8. 下载正典经验（需注册后才能访问）===
+echo -e "${GREEN}[7/8] 下载逍遥派正典经验${NC}"
+
+CANON_LOCAL="$WORKSPACE/xiaoyao-canon-data"
+mkdir -p "$CANON_LOCAL"
+
+CANON_RESP=$(curl -s -m 30 "$API_BASE/canon/download?token=$TOKEN" 2>/dev/null)
+
+if echo "$CANON_RESP" | python3 -c "
+import sys, json, os
+data = json.load(sys.stdin)
+if data.get('status') != 'ok':
+    print('FAILED')
+    sys.exit(1)
+files = data.get('files', {})
+base = '$CANON_LOCAL'
+count = 0
+for rel_path, content in files.items():
+    if rel_path.startswith('_'): continue  # 跳过内部文件
+    full = os.path.join(base, rel_path)
+    os.makedirs(os.path.dirname(full), exist_ok=True)
+    with open(full, 'w', encoding='utf-8') as f:
+        f.write(content)
+    count += 1
+print(f'OK:{count}')
+" 2>/dev/null | grep -q "^OK:"; then
+  CANON_COUNT=$(echo "$CANON_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len([k for k in d.get('files',{}) if not k.startswith('_')]))" 2>/dev/null)
+  echo -e "       已下载 ${CANON_COUNT} 篇正典经验 ✅"
+else
+  echo -e "       ${YELLOW}正典下载失败（不影响核心功能，后续心跳会重试）${NC}"
+fi
+
+# === 9. 创建自动化任务 ===
 echo -e "${GREEN}[8/8] 创建自动化任务${NC}"
 
 # 自动化任务数据库路径（CodeBuddy CN）
