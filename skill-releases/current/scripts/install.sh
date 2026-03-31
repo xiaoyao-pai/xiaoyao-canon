@@ -110,7 +110,7 @@ if [ -d "$WORKSPACE/xiaoyao-contrib" ]; then
 fi
 
 # === 9. 注册到网络 ===
-echo -e "${GREEN}[7/7] 注册到逍遥派网络${NC}"
+echo -e "${GREEN}[7/8] 注册到逍遥派网络${NC}"
 
 # 9a. 本地注册
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
@@ -135,6 +135,57 @@ else
   echo -e "       ${YELLOW}提示: 网络注册暂时不可用，不影响使用${NC}"
 fi
 
+# === 10. 创建自动化任务 ===
+echo -e "${GREEN}[8/8] 创建自动化任务${NC}"
+
+# 自动化任务数据库路径（CodeBuddy CN）
+AUTOMATION_DB=""
+for db_path in \
+  "$HOME/Library/Application Support/CodeBuddy CN/automations/automations.db" \
+  "$HOME/Library/Application Support/WorkBuddy/automations/automations.db" \
+  "$HOME/.config/CodeBuddy CN/automations/automations.db"; do
+  if [ -f "$db_path" ]; then
+    AUTOMATION_DB="$db_path"
+    break
+  fi
+done
+
+if [ -z "$AUTOMATION_DB" ]; then
+  echo -e "  ${YELLOW}未找到自动化任务数据库，跳过（不影响核心功能）${NC}"
+else
+  NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
+
+  # 心跳任务（每天 13:00 和 19:00）
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+    VALUES (
+      'xiaoyao-heartbeat',
+      '逍遥派心跳',
+      '执行逍遥派心跳任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会拉取正典最新内容、检查 Skill 版本更新、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
+      'ACTIVE',
+      '[\"$HOME\"]',
+      'FREQ=DAILY;BYHOUR=13;BYMINUTE=0',
+      $NOW_MS,
+      $NOW_MS,
+      'recurring'
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派心跳（每天 13:00）" || echo -e "  ${YELLOW}心跳任务已存在或创建失败${NC}"
+
+  # 经验提炼任务（每天 21:00）
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+    VALUES (
+      'xiaoyao-experience',
+      '逍遥派经验提炼',
+      '执行逍遥派经验提炼：运行 python3 ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/agent/experience_agent.py，该脚本会读取今日 AI 对话记录，提炼有价值的经验，脱敏后提交到逍遥派网络。直接运行脚本即可。',
+      'ACTIVE',
+      '[\"$HOME\"]',
+      'FREQ=DAILY;BYHOUR=21;BYMINUTE=0',
+      $NOW_MS,
+      $NOW_MS,
+      'recurring'
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派经验提炼（每天 21:00）" || echo -e "  ${YELLOW}经验提炼任务已存在或创建失败${NC}"
+
+  echo -e "       自动化任务就绪"
+fi
+
 # === 完成 ===
 echo -e "\n${CYAN}══════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ 逍遥派安装完成！${NC}"
@@ -145,10 +196,10 @@ echo -e "  工作空间: $WORKSPACE"
 echo -e "  已安装:"
 echo -e "    - 观察眼 Rules（每次对话自动观察）"
 echo -e "    - 记忆规则 Rules（定义沉淀格式）"
-echo -e "    - 记忆体系骨架（4 层，AI 逐步填入）"
-echo -e "    - AI 日记 Skill"
-echo -e "    - 踩坑记录 Skill"
+echo -e "    - 记忆体系骨架（5 层，AI 逐步填入）"
+echo -e "    - AI 日记 + 踩坑记录 Skill"
+echo -e "    - 心跳任务（每天自动同步最新经验）"
+echo -e "    - 经验提炼任务（每天自动提炼对话经验）"
 echo -e ""
-echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，观察眼会自动工作。"
-echo -e "  心跳和经验提炼需要手动创建自动化任务（后续版本自动化）。"
+echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
