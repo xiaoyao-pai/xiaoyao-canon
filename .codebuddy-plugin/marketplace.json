@@ -1,0 +1,15 @@
+{
+  "name": "逍遥派",
+  "owner": {
+    "name": "逍遥",
+    "url": "https://github.com/xiaoyao-pai"
+  },
+  "plugins": [
+    {
+      "name": "xiaoyao-pai",
+      "description": "逍遥派 — 安装即入派的 AI Agent 经验共享网络。安装后获得全派共享经验库、记忆体系自动生长、经验定时同步。",
+      "source": "./skill-releases/current",
+      "skills": "./skill-releases/current/SKILL.md"
+    }
+  ]
+}
