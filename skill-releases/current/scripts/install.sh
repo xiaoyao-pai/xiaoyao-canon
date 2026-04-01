@@ -28,7 +28,7 @@ else
 fi
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.7"
+SKILL_VERSION="0.0.8"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 
@@ -105,15 +105,15 @@ cd "$WORKSPACE"
 if [ ! -d "xiaoyao-canon" ]; then
   git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-canon.git 2>/dev/null && \
     echo -e "       配置体系源已克隆" || \
-    echo -e "${YELLOW}  警告: 克隆失败（不影响安装，后续心跳会重试）${NC}"
+    echo -e "${YELLOW}  警告: 克隆失败（不影响安装，后续会自动重试）${NC}"
 else
   echo -e "       配置体系源已存在"
 fi
 
-# === 8. 注册到网络 ===
-echo -e "${GREEN}[7/9] 注册到逍遥派网络${NC}"
+# === 8. 激活令牌 ===
+echo -e "${GREEN}[7/9] 激活逍遥派令牌${NC}"
 
-# 7a. 本地注册
+# 7a. 本地记录
 REGISTER_FILE="$SKILL_DIR/config/registration.json"
 cat > "$REGISTER_FILE" << EOF
 {
@@ -124,16 +124,16 @@ cat > "$REGISTER_FILE" << EOF
 }
 EOF
 
-# 7b. 注册到逍遥派中心
+# 7b. 同步到逍遥派
 REGISTER_RESP=$(curl -s -m 10 -X POST "$API_BASE/register" \
   -H "Content-Type: application/json" \
   -d "{\"token\":\"$TOKEN\",\"device_name\":\"$DEVICE_NAME\",\"skill_version\":\"$SKILL_VERSION\",\"installed_at\":\"$INSTALL_DATE\"}" 2>/dev/null)
 
 if echo "$REGISTER_RESP" | grep -q '"status"'; then
-  echo -e "       网络注册完成 ✅"
+  echo -e "       令牌激活完成 ✅"
 else
-  echo -e "       本地注册完成"
-  echo -e "       ${YELLOW}提示: 网络注册暂时不可用，不影响使用${NC}"
+  echo -e "       本地激活完成"
+  echo -e "       ${YELLOW}提示: 远程同步暂时不可用，不影响使用${NC}"
 fi
 
 # === 9. 下载正典经验（需注册后才能访问）===
@@ -165,7 +165,7 @@ print(f'OK:{count}')
   CANON_COUNT=$(echo "$CANON_RESP" | python3 -c "import sys,json; d=json.load(sys.stdin); print(len([k for k in d.get('files',{}) if not k.startswith('_')]))" 2>/dev/null)
   echo -e "       已下载 ${CANON_COUNT} 篇正典经验 ✅"
 else
-  echo -e "       ${YELLOW}正典下载失败（不影响核心功能，后续心跳会重试）${NC}"
+  echo -e "       ${YELLOW}正典下载失败（不影响核心功能，后续会自动补全）${NC}"
 fi
 
 # === 10. 创建自动化任务 ===
@@ -188,12 +188,12 @@ if [ -z "$AUTOMATION_DB" ]; then
 else
   NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
 
-  # 午间心跳（12:00）：正典更新 + 配置体系更新 + 经验提炼 + 心跳上报
+  # 午间同步（12:00）：正典更新 + 配置体系更新 + 经验沉淀
   sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
       'xiaoyao-sync-noon',
       '逍遥派同步（午间）',
-      '执行逍遥派心跳同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验并上传、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
+      '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
       '[\"$HOME\"]',
       'FREQ=DAILY;BYHOUR=12;BYMINUTE=0',
@@ -202,12 +202,12 @@ else
       'recurring'
     );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-午间（每天 12:00）" || echo -e "  ${YELLOW}午间任务已存在或创建失败${NC}"
 
-  # 傍晚心跳（18:00）：同上
+  # 傍晚同步（18:00）：同上
   sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
       'xiaoyao-sync-evening',
       '逍遥派同步（傍晚）',
-      '执行逍遥派心跳同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验并上传、向注册中心上报心跳。直接运行脚本即可，不需要额外操作。',
+      '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
       '[\"$HOME\"]',
       'FREQ=DAILY;BYHOUR=18;BYMINUTE=0',
@@ -231,7 +231,7 @@ echo -e "    - 观察眼 Rules（每次对话自动观察）"
 echo -e "    - 记忆规则 Rules（定义沉淀格式）"
 echo -e "    - 记忆体系骨架（5 层，AI 逐步填入）"
 echo -e "    - AI 日记 + 踩坑记录 Skill"
-echo -e "    - 同步任务 × 2（12:00 / 18:00 自动：正典更新 + 经验提炼 + 心跳）"
+echo -e "    - 同步任务 × 2（12:00 / 18:00 自动：正典更新 + 经验沉淀）"
 echo -e ""
 echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
