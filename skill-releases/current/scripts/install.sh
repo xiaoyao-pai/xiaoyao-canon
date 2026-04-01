@@ -28,7 +28,7 @@ else
 fi
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.8"
+SKILL_VERSION="0.0.9"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 
@@ -189,13 +189,14 @@ else
   NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
 
   # 午间同步（12:00）：正典更新 + 配置体系更新 + 经验沉淀
+  CWDS_JSON="[\"$HOME\"]"
   sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
       'xiaoyao-sync-noon',
       '逍遥派同步（午间）',
       '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
-      '[\"$HOME\"]',
+      '$CWDS_JSON',
       'FREQ=DAILY;BYHOUR=12;BYMINUTE=0',
       $NOW_MS,
       $NOW_MS,
@@ -209,7 +210,7 @@ else
       '逍遥派同步（傍晚）',
       '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
       'ACTIVE',
-      '[\"$HOME\"]',
+      '$CWDS_JSON',
       'FREQ=DAILY;BYHOUR=18;BYMINUTE=0',
       $NOW_MS,
       $NOW_MS,
