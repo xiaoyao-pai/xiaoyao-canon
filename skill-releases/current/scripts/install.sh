@@ -28,7 +28,7 @@ else
 fi
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.9"
+SKILL_VERSION="0.0.10"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 
@@ -217,6 +217,20 @@ else
       'recurring'
     );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-傍晚（每天 18:00）" || echo -e "  ${YELLOW}傍晚任务已存在或创建失败${NC}"
 
+  # 下午同步（15:00）：同上
+  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+    VALUES (
+      'xiaoyao-sync-afternoon',
+      '逍遥派同步（下午）',
+      '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
+      'ACTIVE',
+      '$CWDS_JSON',
+      'FREQ=DAILY;BYHOUR=15;BYMINUTE=0',
+      $NOW_MS,
+      $NOW_MS,
+      'recurring'
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-下午（每天 15:00）" || echo -e "  ${YELLOW}下午任务已存在或创建失败${NC}"
+
   echo -e "       自动化任务就绪"
 fi
 
@@ -232,7 +246,7 @@ echo -e "    - 观察眼 Rules（每次对话自动观察）"
 echo -e "    - 记忆规则 Rules（定义沉淀格式）"
 echo -e "    - 记忆体系骨架（5 层，AI 逐步填入）"
 echo -e "    - AI 日记 + 踩坑记录 Skill"
-echo -e "    - 同步任务 × 2（12:00 / 18:00 自动：正典更新 + 经验沉淀）"
+echo -e "    - 同步任务 × 3（12:00 / 15:00 / 18:00 自动：正典更新 + 经验沉淀）"
 echo -e ""
 echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
