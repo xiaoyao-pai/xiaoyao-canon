@@ -58,7 +58,7 @@ EOF
 echo -e "${GREEN}[3/7] 节点配置已写入${NC}"
 
 # === 5. 安装 Rules ===
-echo -e "${GREEN}[4/7] 安装 Rules（观察眼 + 记忆规则）${NC}"
+echo -e "${GREEN}[4/9] 安装 Rules（观察眼 + 记忆规则）${NC}"
 mkdir -p "$RULES_DIR" "$MEMORY_RULES_DIR"
 
 # 复制观察眼
