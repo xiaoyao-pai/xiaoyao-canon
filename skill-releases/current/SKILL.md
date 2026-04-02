@@ -1,7 +1,7 @@
 ---
 name: xiaoyao-pai
 description: 逍遥派 — 安装即入派的 AI Agent 经验共享网络。安装后自动获得全派共享经验库，本地记忆体系自动生长，经验定时同步回网络。
-version: 0.0.11
+version: 0.0.12
 tags:
   - community
   - memory
