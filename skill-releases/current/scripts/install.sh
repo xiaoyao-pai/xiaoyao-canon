@@ -28,7 +28,7 @@ else
 fi
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.10"
+SKILL_VERSION="0.0.11"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 
@@ -63,6 +63,13 @@ cat > "$SKILL_DIR/config/network.json" << EOF
   "canon": "https://github.com/xiaoyao-pai/xiaoyao-canon.git",
   "contrib": "https://github.com/xiaoyao-pai/xiaoyao-contrib.git",
   "api_base": "$API_BASE"
+}
+EOF
+
+# 写入版本文件（供 heartbeat.sh 读取）
+cat > "$SKILL_DIR/config/version.json" << EOF
+{
+  "version": "$SKILL_VERSION"
 }
 EOF
 
@@ -187,10 +194,13 @@ if [ -z "$AUTOMATION_DB" ]; then
   echo -e "  ${YELLOW}未找到自动化任务数据库，跳过（不影响核心功能）${NC}"
 else
   NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null || date +%s000)
+  CWDS_JSON="[\"$HOME\"]"
+
+  # 先删除旧的逍遥派任务（确保更新而非残留）
+  sqlite3 "$AUTOMATION_DB" "DELETE FROM automations WHERE id LIKE 'xiaoyao-%';" 2>/dev/null
 
   # 午间同步（12:00）：正典更新 + 配置体系更新 + 经验沉淀
-  CWDS_JSON="[\"$HOME\"]"
-  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
       'xiaoyao-sync-noon',
       '逍遥派同步（午间）',
@@ -201,24 +211,10 @@ else
       $NOW_MS,
       $NOW_MS,
       'recurring'
-    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-午间（每天 12:00）" || echo -e "  ${YELLOW}午间任务已存在或创建失败${NC}"
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-午间（每天 12:00）" || echo -e "  ${YELLOW}午间任务创建失败${NC}"
 
-  # 傍晚同步（18:00）：同上
-  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
-    VALUES (
-      'xiaoyao-sync-evening',
-      '逍遥派同步（傍晚）',
-      '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
-      'ACTIVE',
-      '$CWDS_JSON',
-      'FREQ=DAILY;BYHOUR=18;BYMINUTE=0',
-      $NOW_MS,
-      $NOW_MS,
-      'recurring'
-    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-傍晚（每天 18:00）" || echo -e "  ${YELLOW}傍晚任务已存在或创建失败${NC}"
-
-  # 下午同步（15:00）：同上
-  sqlite3 "$AUTOMATION_DB" "INSERT OR IGNORE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+  # 下午同步（15:00）
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
     VALUES (
       'xiaoyao-sync-afternoon',
       '逍遥派同步（下午）',
@@ -229,7 +225,21 @@ else
       $NOW_MS,
       $NOW_MS,
       'recurring'
-    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-下午（每天 15:00）" || echo -e "  ${YELLOW}下午任务已存在或创建失败${NC}"
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-下午（每天 15:00）" || echo -e "  ${YELLOW}下午任务创建失败${NC}"
+
+  # 傍晚同步（18:00）
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type)
+    VALUES (
+      'xiaoyao-sync-evening',
+      '逍遥派同步（傍晚）',
+      '执行逍遥派同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新、提炼今日经验。直接运行脚本即可，不需要额外操作。',
+      'ACTIVE',
+      '$CWDS_JSON',
+      'FREQ=DAILY;BYHOUR=18;BYMINUTE=0',
+      $NOW_MS,
+      $NOW_MS,
+      'recurring'
+    );" 2>/dev/null && echo -e "  已创建: 逍遥派同步-傍晚（每天 18:00）" || echo -e "  ${YELLOW}傍晚任务创建失败${NC}"
 
   echo -e "       自动化任务就绪"
 fi

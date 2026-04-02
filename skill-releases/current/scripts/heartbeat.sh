@@ -10,7 +10,19 @@ NODE_CONFIG="$SKILL_DIR/config/node.json"
 # 读取配置
 TOKEN=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG'))['token'])" 2>/dev/null)
 API_BASE=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG')).get('api_base', 'http://119.29.181.188/xiaoyao/api'))" 2>/dev/null)
-LOCAL_VERSION=$(python3 -c "import json; print(json.load(open('$SKILL_DIR/config/version.json'))['version'])" 2>/dev/null || echo "0.0.0")
+
+# 读取版本号（优先 version.json，fallback 到 node.json）
+LOCAL_VERSION=$(python3 -c "
+import json, os
+vf = os.path.expanduser('$SKILL_DIR/config/version.json')
+nf = os.path.expanduser('$SKILL_DIR/config/node.json')
+if os.path.exists(vf):
+    print(json.load(open(vf))['version'])
+elif os.path.exists(nf):
+    print(json.load(open(nf)).get('skill_version', '0.0.0'))
+else:
+    print('0.0.0')
+" 2>/dev/null || echo "0.0.0")
 
 if [ -z "$TOKEN" ]; then
   echo "错误: 未找到节点配置，请先运行 install.sh"
@@ -55,7 +67,19 @@ fi
 echo "[同步] 2/4 检查配置体系更新..."
 if [ -d "$WORKSPACE/xiaoyao-canon/.git" ]; then
   cd "$WORKSPACE/xiaoyao-canon"
-  git pull origin main --quiet 2>/dev/null && echo "[同步] 配置体系源已更新" || echo "[同步] 拉取失败（不影响使用）"
+  
+  # git pull（公开仓库，匿名 HTTPS 拉取，不需要权限）
+  GIT_RESULT=$(git pull origin main 2>&1)
+  if [ $? -eq 0 ]; then
+    echo "[同步] 配置体系源已更新"
+  else
+    echo "[同步] Git 拉取结果: $GIT_RESULT"
+    echo "[同步] 尝试重新克隆..."
+    cd "$WORKSPACE"
+    rm -rf xiaoyao-canon
+    git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-canon.git 2>/dev/null && \
+      echo "[同步] 重新克隆成功" || echo "[同步] 克隆失败（不影响使用）"
+  fi
 
   REMOTE_DIR="$WORKSPACE/xiaoyao-canon/skill-releases/current"
   REMOTE_SKILL_VER=$(python3 -c "import json; print(json.load(open('$REMOTE_DIR/config/version.json'))['version'])" 2>/dev/null || echo "0.0.0")
