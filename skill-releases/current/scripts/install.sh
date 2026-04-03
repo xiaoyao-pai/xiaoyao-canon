@@ -300,20 +300,37 @@ print(int(next_run.timestamp() * 1000))
 
   EXPERIENCE_PROMPT='你是逍遥派经验提炼师。请执行以下任务：
 
-1. 扫描所有 CodeBuddy 和 WorkBuddy 的对话记录，找到今天有实质内容的对话
-   - 检查 ~/Library/Application Support/CodeBuddy CN/ 下的 sessions 数据库
-   - 检查 ~/Library/Application Support/WorkBuddy/ 下的 sessions 数据库
-   - 对每个有更新的对话，读取其 brain/ 目录下的 overview 或摘要文件
-2. 从中提炼可复用的经验，按类型分类：
+1. 检查本地经验目录 ~/.claw/workspace/xiaoyao-contrib/contributions/ 下是否已有经验文件
+   - 如果为空（首次提炼）：扫描所有历史对话记录，做全量提炼
+   - 如果已有文件：只扫描最近有更新的对话，做增量提炼
+
+2. 扫描所有 CodeBuddy 和 WorkBuddy 的对话记录
+   - 检查 ~/Library/Application Support/CodeBuddy CN/ 下的 sessions 数据库和 brain/ 目录
+   - 检查 ~/Library/Application Support/WorkBuddy/ 下的 sessions 数据库和 brain/ 目录
+   - 读取每个对话的 brain/ 目录下的 overview 或摘要文件
+
+3. 从中提炼可复用的经验，按类型分类：
    - skill: 可复用的解决方案（问题→方案→指令）
    - pitfall: 踩坑记录（现象→原因→解决）
    - decision: 技术/产品决策（选择→理由）
    - insight: 规律/模式/洞察
-3. 每条经验用 markdown 格式，包含 frontmatter（type/domain/tags/date）
-4. 安全脱敏（只脱密钥/Token/密码/IP，保留技术场景）
-5. 读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号
-6. 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录
+
+4. 每条经验用独立的 markdown 文件，包含 frontmatter：
+   ---
+   type: skill | pitfall | decision | insight
+   domain: 领域标签
+   tags: 技术标签
+   date: YYYY-MM-DD
+   ---
+   然后是标题、场景、方案、关键点
+
+5. 安全脱敏（只脱密钥/Token/密码/IP，保留技术场景和项目名）
+
+6. 读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号
+   保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录
+
 7. 如果没有值得提炼的内容，什么都不做，不要编造
+   只提炼真正有价值、可复用的经验，不记录流水账
 
 文件命名：YYYY-MM-DD-序号-标题.md'
 
