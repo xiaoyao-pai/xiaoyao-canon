@@ -20,7 +20,7 @@ echo -e "${CYAN}  逍遥派 · 安装传功长老${NC}"
 echo -e "${CYAN}══════════════════════════════════════${NC}"
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.12"
+SKILL_VERSION="0.0.13"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 CODEBUDDY_DIR="$HOME/.codebuddy"
@@ -220,8 +220,19 @@ else
   echo "> 正典待下次心跳同步后更新" >> "$CANON_SKILL_DIR/INDEX.md"
 fi
 
-# === 7. 创建自动化任务（含 next_run_at）===
-echo -e "${GREEN}[7/8] 创建自动化任务${NC}"
+# === 7. 克隆配置体系源（心跳脚本在此目录中）===
+echo -e "${GREEN}[7/9] 克隆配置体系源${NC}"
+cd "$WORKSPACE"
+if [ ! -d "xiaoyao-canon" ]; then
+  git clone --depth 1 https://github.com/xiaoyao-pai/xiaoyao-canon.git 2>/dev/null && \
+    echo -e "       配置体系源已克隆 ✅" || \
+    echo -e "       ${YELLOW}克隆失败（不影响安装，首次心跳时会自动重试）${NC}"
+else
+  echo -e "       配置体系源已存在"
+fi
+
+# === 8. 创建自动化任务（含 next_run_at）===
+echo -e "${GREEN}[8/9] 创建自动化任务${NC}"
 
 AUTOMATION_DB=""
 for db_path in \
@@ -307,15 +318,15 @@ print(int(next_h.timestamp() * 1000))
     echo -e "  ✅ 经验提炼（每 2 小时）" || echo -e "  ${YELLOW}经验提炼任务创建失败${NC}"
 fi
 
-# === 8. 注册补偿（如果之前云端不可用）===
+# === 9. 注册补偿（如果之前云端不可用）===
 if [ "$LOCAL_GENERATED" = true ]; then
-  echo -e "${GREEN}[8/8] 补偿注册${NC}"
+  echo -e "${GREEN}[9/9] 补偿注册${NC}"
   curl -s -m 10 -X POST "$API_BASE/register" \
     -H "Content-Type: application/json" \
     -d "{\"token\":\"$TOKEN\",\"device_name\":\"$DEVICE_NAME\",\"skill_version\":\"$SKILL_VERSION\",\"installed_at\":\"$INSTALL_DATE\"}" 2>/dev/null | grep -q '"status"' && \
     echo -e "       补偿注册成功 ✅" || echo -e "       ${YELLOW}补偿注册暂不可用，心跳时会重试${NC}"
 else
-  echo -e "${GREEN}[8/8] 注册已完成${NC}"
+  echo -e "${GREEN}[9/9] 注册已完成${NC}"
 fi
 
 # === 完成 ===
