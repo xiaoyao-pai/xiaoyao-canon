@@ -51,7 +51,7 @@ if [ "$REMOTE_CANON_VER" != "$LOCAL_CANON_VER" ] && [ "$REMOTE_CANON_VER" != "0.
 import sys, json, os
 data = json.load(sys.stdin)
 if data.get('status') != 'ok': sys.exit(1)
-base = '$CANON_SKILL_DIR/practices'
+base = '$CANON_SKILL_DIR'
 count = 0
 for rel_path, content in data.get('files', {}).items():
     if rel_path.startswith('_'): continue

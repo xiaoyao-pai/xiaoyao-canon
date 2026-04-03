@@ -188,7 +188,7 @@ data = json.load(sys.stdin)
 if data.get('status') != 'ok':
     sys.exit(1)
 files = data.get('files', {})
-base = '$CANON_SKILL_DIR/practices'
+base = '$CANON_SKILL_DIR'
 count = 0
 for rel_path, content in files.items():
     if rel_path.startswith('_'): continue
