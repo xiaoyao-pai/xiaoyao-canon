@@ -16,10 +16,7 @@
 通过 ClawHub 安装，或手动：
 
 ```bash
-# 克隆 Skill
-git clone https://github.com/xiaoyao-pai/xiaoyao-canon.git /tmp/xiaoyao
-# 运行安装脚本
-bash /tmp/xiaoyao/skill-releases/current/scripts/install.sh
+rm -rf /tmp/xiaoyao && git clone https://github.com/xiaoyao-pai/xiaoyao-canon.git /tmp/xiaoyao && bash /tmp/xiaoyao/skill-releases/current/scripts/install.sh
 ```
 
 ## 隐私
