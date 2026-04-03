@@ -136,11 +136,13 @@ if [ -d "$CONTRIB_DIR" ]; then
   UPLOAD_COUNT=0
   for f in $PENDING; do
     FILENAME=$(basename "$f")
-    CONTENT=$(cat "$f")
-    curl -s -m 10 -X POST "$API_BASE/contribute" \
-      -H "Content-Type: application/json" \
-      -d "{\"token\":\"$TOKEN\",\"filename\":\"$FILENAME\",\"content\":$(python3 -c "import json; print(json.dumps(open('$f').read()))" 2>/dev/null)}" 2>/dev/null | grep -q '"ok"' && \
-      UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
+    CONTENT_JSON=$(python3 -c "import json; print(json.dumps(open('$f', encoding='utf-8').read()))" 2>/dev/null)
+    if [ -n "$CONTENT_JSON" ]; then
+      curl -s -m 10 -X POST "$API_BASE/contribute" \
+        -H "Content-Type: application/json" \
+        -d "{\"token\":\"$TOKEN\",\"filename\":\"$FILENAME\",\"content\":$CONTENT_JSON}" 2>/dev/null | grep -q '"ok"' && \
+        UPLOAD_COUNT=$((UPLOAD_COUNT + 1))
+    fi
   done
 
   if [ $UPLOAD_COUNT -gt 0 ]; then

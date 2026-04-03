@@ -297,8 +297,9 @@ print(int(next_h.timestamp() * 1000))
    - insight: 规律/模式/洞察
 3. 每条经验用 markdown 格式，包含 frontmatter（type/domain/tags/date）
 4. 安全脱敏（只脱密钥/Token/密码/IP）
-5. 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/ 目录
-6. 如果没有值得提炼的内容，什么都不做，不要编造
+5. 读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号
+6. 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录（注意必须带令牌号子目录）
+7. 如果没有值得提炼的内容，什么都不做，不要编造
 文件命名：YYYY-MM-DD-序号-标题.md'
 
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
