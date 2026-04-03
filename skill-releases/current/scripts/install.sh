@@ -290,13 +290,12 @@ print(f'{results[12]}|{results[15]}|{results[18]}')
     echo -e "  ✅ 心跳同步-傍晚（18:00）" || echo -e "  ${YELLOW}傍晚任务创建失败${NC}"
 
   # 经验提炼（独立任务，每 2 小时）
+  # 首次 next_run_at 设为 5 分钟后，让安装后尽快执行一次
   EXPERIENCE_NEXT=$(python3 -c "
 from datetime import datetime, timedelta
 import time
-now = datetime.now()
-# 下一个偶数小时
-next_h = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=(2 - now.hour % 2))
-print(int(next_h.timestamp() * 1000))
+next_run = datetime.now() + timedelta(minutes=5)
+print(int(next_run.timestamp() * 1000))
 " 2>/dev/null)
 
   EXPERIENCE_PROMPT='你是逍遥派经验提炼师。请执行以下任务：
@@ -349,6 +348,24 @@ echo -e "    - AI 日记 + 踩坑记录 Skill"
 echo -e "    - 逍遥派共享正典 Skill（AI 可调用）"
 echo -e "    - 心跳同步 × 3（12:00 / 15:00 / 18:00）"
 echo -e "    - 经验提炼（每 2 小时，本地 LLM 自动提炼）"
+echo -e ""
+
+# === 首次心跳 ===
+echo -e "${GREEN}  正在执行首次心跳...${NC}"
+HEARTBEAT_SCRIPT="$WORKSPACE/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh"
+if [ -f "$HEARTBEAT_SCRIPT" ]; then
+  bash "$HEARTBEAT_SCRIPT" 2>/dev/null && \
+    echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用，后续自动重试）${NC}"
+else
+  # 直接上报一次心跳
+  curl -s -m 10 -X POST "$API_BASE/heartbeat" \
+    -H "Content-Type: application/json" \
+    -d "{\"token\":\"$TOKEN\",\"skill_version\":\"$SKILL_VERSION\"}" 2>/dev/null | grep -q '"ok"' && \
+    echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用）${NC}"
+fi
+
+# === 首次经验提炼（5 分钟后自动执行）===
+echo -e "  ${GREEN}首次经验提炼将在 5 分钟内自动执行${NC}"
 echo -e ""
 echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
 echo -e ""
