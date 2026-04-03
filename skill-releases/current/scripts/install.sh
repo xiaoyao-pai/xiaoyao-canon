@@ -300,17 +300,22 @@ print(int(next_h.timestamp() * 1000))
 " 2>/dev/null)
 
   EXPERIENCE_PROMPT='你是逍遥派经验提炼师。请执行以下任务：
-1. 读取最近的 AI 对话记录（brain/overview.md），找到有实质内容的对话
+
+1. 扫描所有 CodeBuddy 和 WorkBuddy 的对话记录，找到今天有实质内容的对话
+   - 检查 ~/Library/Application Support/CodeBuddy CN/ 下的 sessions 数据库
+   - 检查 ~/Library/Application Support/WorkBuddy/ 下的 sessions 数据库
+   - 对每个有更新的对话，读取其 brain/ 目录下的 overview 或摘要文件
 2. 从中提炼可复用的经验，按类型分类：
    - skill: 可复用的解决方案（问题→方案→指令）
    - pitfall: 踩坑记录（现象→原因→解决）
    - decision: 技术/产品决策（选择→理由）
    - insight: 规律/模式/洞察
 3. 每条经验用 markdown 格式，包含 frontmatter（type/domain/tags/date）
-4. 安全脱敏（只脱密钥/Token/密码/IP）
+4. 安全脱敏（只脱密钥/Token/密码/IP，保留技术场景）
 5. 读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号
-6. 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录（注意必须带令牌号子目录）
+6. 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录
 7. 如果没有值得提炼的内容，什么都不做，不要编造
+
 文件命名：YYYY-MM-DD-序号-标题.md'
 
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
