@@ -188,10 +188,6 @@ for skill_name in xiaoyao-ai-diary xiaoyao-pitfall-recorder; do
   fi
 done
 
-echo ""
-echo "[更新] ✅ 升级完成: $LOCAL_VER → $REMOTE_VER"
-echo "  保护项: node.json / registration.json / 有数据的记忆文件 / domain-*.mdc / 用户自定义的子Skill"
-
 # === 类型 5：正典 Skill 骨架（确保存在）===
 echo "[更新] 检查正典 Skill..."
 CANON_SKILL="$SKILLS_DIR/xiaoyao-canon-practices"
@@ -291,3 +287,7 @@ print(f'{results[12]}|{results[15]}|{results[18]}')
 else
   echo "  ⚠️ 未找到自动化数据库，跳过"
 fi
+
+echo ""
+echo "[更新] ✅ 升级完成: $LOCAL_VER → $REMOTE_VER"
+echo "  保护项: node.json / registration.json / 有数据的记忆文件 / domain-*.mdc / 用户自定义的子Skill"

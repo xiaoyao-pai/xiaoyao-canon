@@ -1,11 +1,11 @@
 #!/bin/bash
-# 逍遥派 · 安装脚本 v0.0.12
+# 逍遥派 · 安装脚本 v0.0.13
 # 改造内容：
 #   C1: 令牌由云端发放（fallback 本地生成）
-#   C2: 删除 git clone（安装阶段不依赖 git）
 #   C4: 正典保存到 skills 目录（AI 可调用）
 #   C5: 记忆体系六层升级
 #   C6: 自动化任务补充 next_run_at
+#   C7: git clone 配置体系源（心跳脚本依赖）
 # 用法: bash install.sh
 set -e
 
@@ -39,7 +39,7 @@ if [ -f "$EXISTING_NODE" ]; then
 fi
 
 if [ -z "$TOKEN" ]; then
-  echo -e "\n${GREEN}[1/8] 注册到逍遥派...${NC}"
+  echo -e "\n${GREEN}[1/9] 注册到逍遥派...${NC}"
   # 尝试云端注册获取令牌
   REGISTER_RESP=$(curl -s -m 10 -X POST "$API_BASE/register" \
     -H "Content-Type: application/json" \
@@ -57,14 +57,14 @@ if [ -z "$TOKEN" ]; then
     LOCAL_GENERATED=false
   fi
 else
-  echo -e "\n${GREEN}[1/8] 复用已有令牌号${NC}: $TOKEN"
+  echo -e "\n${GREEN}[1/9] 复用已有令牌号${NC}: $TOKEN"
   LOCAL_GENERATED=false
 fi
 
 echo -e "       设备名称: $DEVICE_NAME"
 
 # === 2. 创建工作空间 & 写入配置 ===
-echo -e "${GREEN}[2/8] 创建工作空间 & 写入配置${NC}"
+echo -e "${GREEN}[2/9] 创建工作空间 & 写入配置${NC}"
 mkdir -p "$WORKSPACE" "$SKILL_DIR/config"
 
 cat > "$SKILL_DIR/config/node.json" << EOF
@@ -105,14 +105,14 @@ fi
 echo -e "       配置已写入"
 
 # === 3. 安装 Rules（观察眼 + 记忆规则）===
-echo -e "${GREEN}[3/8] 安装 Rules${NC}"
+echo -e "${GREEN}[3/9] 安装 Rules${NC}"
 mkdir -p "$RULES_DIR" "$MEMORY_RULES_DIR"
 
 cp "$SKILL_ROOT/rules/xiaoyao-observer.mdc" "$RULES_DIR/" 2>/dev/null || echo -e "  ${YELLOW}观察眼文件未找到${NC}"
 cp "$SKILL_ROOT/rules/xiaoyao-memory.mdc" "$RULES_DIR/" 2>/dev/null || echo -e "  ${YELLOW}记忆规则未找到${NC}"
 
 # === 4. 安装六层记忆体系模板 ===
-echo -e "${GREEN}[4/8] 安装六层记忆体系${NC}"
+echo -e "${GREEN}[4/9] 安装六层记忆体系${NC}"
 for tpl in 00-核心身份.mdc 01-认知框架.mdc 02-行为习惯.mdc 03-技术画像.mdc 04-人生状态.mdc 05-经验洞察.mdc; do
   if [ -f "$SKILL_ROOT/templates/memory/$tpl" ]; then
     # 不覆盖已有内容（用户可能已有记忆数据）
@@ -126,7 +126,7 @@ for tpl in 00-核心身份.mdc 01-认知框架.mdc 02-行为习惯.mdc 03-技术
 done
 
 # === 5. 安装子 Skill ===
-echo -e "${GREEN}[5/8] 安装子 Skill${NC}"
+echo -e "${GREEN}[5/9] 安装子 Skill${NC}"
 SKILLS_DIR="$CODEBUDDY_DIR/skills"
 
 # AI 日记 + 踩坑记录
@@ -141,7 +141,7 @@ for skill_dir in ai-diary pitfall-recorder; do
 done
 
 # === 6. 下载正典 → 保存到 Skill 目录（AI 可调用）===
-echo -e "${GREEN}[6/8] 下载逍遥派共享正典${NC}"
+echo -e "${GREEN}[6/9] 下载逍遥派共享正典${NC}"
 
 CANON_SKILL_DIR="$SKILLS_DIR/xiaoyao-canon-practices"
 mkdir -p "$CANON_SKILL_DIR/practices"

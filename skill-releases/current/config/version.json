@@ -1,5 +1,5 @@
 {
   "version": "0.0.13",
-  "updated": "2026-04-02",
-  "changelog": "C1云端令牌/C2删除git clone/C3经验提炼独立/C4正典作为Skill/C5六层记忆/C6心跳修复/C7正典推荐"
+  "updated": "2026-04-03",
+  "changelog": "逻辑审查修复+深度审查修复：update.sh六层记忆/正典Skill/自动化刷新；恢复git clone；版本号统一"
 }
