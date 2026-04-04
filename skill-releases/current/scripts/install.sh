@@ -367,19 +367,12 @@ echo -e "    - 心跳同步 × 3（12:00 / 15:00 / 18:00）"
 echo -e "    - 经验提炼（每 2 小时，本地 LLM 自动提炼）"
 echo -e ""
 
-# === 首次心跳 ===
+# === 首次心跳（简单直接 curl，不走 heartbeat.sh）===
 echo -e "${GREEN}  正在执行首次心跳...${NC}"
-HEARTBEAT_SCRIPT="$WORKSPACE/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh"
-if [ -f "$HEARTBEAT_SCRIPT" ]; then
-  bash "$HEARTBEAT_SCRIPT" 2>/dev/null && \
-    echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用，后续自动重试）${NC}"
-else
-  # 直接上报一次心跳
-  curl -s -m 10 -X POST "$API_BASE/heartbeat" \
-    -H "Content-Type: application/json" \
-    -d "{\"token\":\"$TOKEN\",\"skill_version\":\"$SKILL_VERSION\"}" 2>/dev/null | grep -q '"ok"' && \
-    echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用）${NC}"
-fi
+curl -s -m 10 -X POST "$API_BASE/heartbeat" \
+  -H "Content-Type: application/json" \
+  -d "{\"token\":\"$TOKEN\",\"skill_version\":\"$SKILL_VERSION\"}" 2>/dev/null | grep -q '"ok"' && \
+  echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用，后续自动重试）${NC}"
 
 # === 首次经验提炼（5 分钟后自动执行）===
 echo -e "  ${GREEN}首次经验提炼将在 5 分钟内自动执行${NC}"
