@@ -270,32 +270,65 @@ print(f'{results[12]}|{results[15]}|{results[18]}')
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-sync-afternoon', '逍遥派心跳同步（下午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=15;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $AFTERNOON_NEXT);" 2>/dev/null
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-sync-evening', '逍遥派心跳同步（傍晚）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EVENING_NEXT);" 2>/dev/null
 
-  EXPERIENCE_NEXT=$(python3 -c "from datetime import datetime, timedelta; import time; now=datetime.now(); nh=now.replace(minute=0,second=0,microsecond=0)+timedelta(hours=(2-now.hour%2)); print(int(nh.timestamp()*1000))" 2>/dev/null)
-  EXPERIENCE_PROMPT='你是逍遥派经验提炼师。请执行以下任务：
+  EXPERIENCE_NEXT=$(python3 -c "
+from datetime import datetime, timedelta
+import time
+now = datetime.now()
+t = now.replace(hour=2, minute=0, second=0, microsecond=0)
+if now >= t:
+    t += timedelta(days=1)
+print(int(t.timestamp() * 1000))
+" 2>/dev/null)
 
-1. 检查本地经验目录 ~/.claw/workspace/xiaoyao-contrib/contributions/ 下是否已有经验文件
-   - 如果为空（首次提炼）：扫描所有历史对话记录，做全量提炼
-   - 如果已有文件：只扫描最近有更新的对话，做增量提炼
+  EXPERIENCE_PROMPT='你是逍遥派经验提炼师。任务限时 20 分钟内完成。
 
-2. 扫描所有 CodeBuddy 和 WorkBuddy 的对话记录
-   - 检查 ~/Library/Application Support/CodeBuddy CN/ 下的 sessions 数据库和 brain/ 目录
-   - 检查 ~/Library/Application Support/WorkBuddy/ 下的 sessions 数据库和 brain/ 目录
-   - 读取每个对话的 brain/ 目录下的 overview 或摘要文件
+## 第一步：检查是否有新对话（增量扫描）
+运行以下命令，只查找最近 24 小时有更新的对话文件：
+find ~/Library/Application\ Support/CodeBuddy\ CN/ ~/Library/Application\ Support/WorkBuddy/ -name "*.json" -path "*/brain/*" -mtime -1 2>/dev/null | head -20
 
-3. 从中提炼可复用的经验，按类型分类：skill/pitfall/decision/insight
+如果没有任何输出，说明最近 24 小时没有新的对话，直接结束任务，报告"无新对话，跳过提炼"。
 
-4. 每条经验用独立的 markdown 文件，包含 frontmatter（type/domain/tags/date）
+## 第二步：提炼经验（最多 3 条）
+如果有新对话，读取这些文件，从中提炼可复用的经验：
+- skill: 可复用的解决方案（问题→方案→指令）
+- pitfall: 踩坑记录（现象→原因→解决）
+- decision: 技术/产品决策（选择→理由）
+- insight: 规律/模式/洞察
 
-5. 安全脱敏（只脱密钥/Token/密码/IP，保留技术场景和项目名）
+本次最多提炼 3 条，宁精勿滥。
 
-6. 读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号
-   保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录
+## 第三步：生成文件
+每条经验用独立 markdown 文件，包含 frontmatter：
+---
+type: skill | pitfall | decision | insight
+domain: 领域标签
+tags: [技术标签]
+date: YYYY-MM-DD
+confidence: high | medium
+source: 对话主题
+score: 0-100
+min_rank: junior | senior | expert
+---
+# 标题
+## 来源
+## 核心要点
+## 详细内容
+## 适用范围
 
-7. 如果没有值得提炼的内容，什么都不做，不要编造。只提炼有价值的经验，不记录流水账
+安全脱敏（只脱密钥/Token/密码/IP，保留技术场景和项目名）。
+读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取令牌号。
+保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录。
+文件命名：YYYY-MM-DD-序号-标题.md
 
-文件命名：YYYY-MM-DD-序号-标题.md'
+## 第四步：上传正典
+读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取 token 和 api_base。
+对每个经验文件执行上传。
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-experience', '逍遥派经验提炼', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=HOURLY;INTERVAL=2', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null
+## 铁律
+- 没有值得提炼的内容就什么都不做，不要编造
+- 最多 3 条，20 分钟内必须结束'
+
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=2;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null
 
   echo "  ✅ 自动化任务已刷新（心跳×3 + 经验提炼×1）"
 else
