@@ -274,7 +274,7 @@ print(f'{results[12]}|{results[15]}|{results[18]}')
 from datetime import datetime, timedelta
 import time
 now = datetime.now()
-t = now.replace(hour=2, minute=0, second=0, microsecond=0)
+t = now.replace(hour=18, minute=0, second=0, microsecond=0)
 if now >= t:
     t += timedelta(days=1)
 print(int(t.timestamp() * 1000))
@@ -328,7 +328,7 @@ min_rank: junior | senior | expert
 - 没有值得提炼的内容就什么都不做，不要编造
 - 最多 3 条，20 分钟内必须结束'
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=2;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at) VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null
 
   echo "  ✅ 自动化任务已刷新（心跳×3 + 经验提炼×1）"
 else

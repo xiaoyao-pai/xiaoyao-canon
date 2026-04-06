@@ -289,12 +289,12 @@ print(f'{results[12]}|{results[15]}|{results[18]}')
     VALUES ('xiaoyao-sync-evening', '逍遥派心跳同步（傍晚）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EVENING_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 心跳同步-傍晚（18:00）" || echo -e "  ${YELLOW}傍晚任务创建失败${NC}"
 
-  # 经验提炼（每日凌晨 2:00，增量扫描，避免超时）
+  # 经验提炼（每日 18:00，增量扫描，避免超时）
   EXPERIENCE_NEXT=$(python3 -c "
 from datetime import datetime, timedelta
 import time
 now = datetime.now()
-t = now.replace(hour=2, minute=0, second=0, microsecond=0)
+t = now.replace(hour=18, minute=0, second=0, microsecond=0)
 if now >= t:
     t += timedelta(days=1)
 print(int(t.timestamp() * 1000))
@@ -349,8 +349,8 @@ min_rank: junior | senior | expert
 - 最多 3 条，20 分钟内必须结束'
 
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
-    VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=2;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null && \
-    echo -e "  ✅ 经验提炼（每日 02:00）" || echo -e "  ${YELLOW}经验提炼任务创建失败${NC}"
+    VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 经验提炼（每日 18:00）" || echo -e "  ${YELLOW}经验提炼任务创建失败${NC}"
 fi
 
 # === 9. 注册补偿（如果之前云端不可用）===
