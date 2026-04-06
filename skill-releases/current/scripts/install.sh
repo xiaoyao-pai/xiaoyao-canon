@@ -1,5 +1,5 @@
 #!/bin/bash
-# 逍遥派 · 安装脚本 v0.0.13
+# 逍遥派 · 安装脚本 v0.0.16
 # 改造内容：
 #   C1: 令牌由云端发放（fallback 本地生成）
 #   C4: 正典保存到 skills 目录（AI 可调用）
@@ -20,7 +20,7 @@ echo -e "${CYAN}  逍遥派 · 安装传功长老${NC}"
 echo -e "${CYAN}══════════════════════════════════════${NC}"
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.13"
+SKILL_VERSION="0.0.16"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 CODEBUDDY_DIR="$HOME/.codebuddy"
@@ -206,7 +206,7 @@ idx = '# 逍遥派共享正典 · 经验索引\n\n'
 idx += f'> 版本: {ver} | 收录: {count} 篇\n\n'
 for rel_path in sorted(files.keys()):
     if rel_path.startswith('_'): continue
-    idx += f'- [{rel_path}](practices/{rel_path})\n'
+    idx += f'- [{rel_path}]({rel_path})\n'
 with open(os.path.join('$CANON_SKILL_DIR', 'INDEX.md'), 'w') as f:
     f.write(idx)
 print(f'OK:{count}')

@@ -1,5 +1,5 @@
 #!/bin/bash
-# 逍遥派 · 心跳同步脚本 v0.0.13
+# 逍遥派 · 心跳同步脚本 v0.0.16
 # 功能：正典更新（云端 API）+ 配置体系更新（git pull）+ 上传已提炼经验 + 心跳上报
 # 不再包含经验提炼（已拆为独立自动化任务）
 set -e
@@ -68,7 +68,7 @@ idx = '# 逍遥派共享正典 · 经验索引\n\n'
 idx += f'> 版本: {ver} | 收录: {count} 篇\n\n'
 for rel_path in sorted(data.get('files', {}).keys()):
     if rel_path.startswith('_'): continue
-    idx += f'- [{rel_path}](practices/{rel_path})\n'
+    idx += f'- [{rel_path}]({rel_path})\n'
 with open(os.path.join('$CANON_SKILL_DIR', 'INDEX.md'), 'w') as f:
     f.write(idx)
 print(f'[同步] 正典更新完成: {count} 个文件')
