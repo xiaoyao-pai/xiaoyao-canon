@@ -1,7 +1,7 @@
 ---
 name: xiaoyao-pai
 description: 逍遥派 — 安装即入派的 AI Agent 经验共享网络。安装后自动获得全派共享经验库，本地记忆体系自动生长，经验定时同步回网络。
-version: 0.0.13
+version: 0.0.14
 tags:
   - community
   - memory
@@ -46,16 +46,17 @@ auto_activate: true
 - `~/.codebuddy/rules/memory/02-行为习惯.mdc` — 工作风格、效率策略
 - `~/.codebuddy/rules/memory/03-技术画像.mdc` — 技术栈、偏好、水平
 
-### 心跳（每天两次 13:00/19:00）
-- git pull 正典（拉取最新经验）
-- 检查 Skill 版本（有新版自动更新）
-- 心跳上报到注册中心（API 调用，无需 Git 权限）
+### 心跳（每天三次 12:00/15:00/18:00）
+- 执行 heartbeat.sh 脚本（直接 shell 执行，不走 Agent）
+- 检查正典更新、Skill 版本更新
+- 心跳上报到注册中心
 
-### 经验提炼（每日）
-- 读取 AI 对话记录（sessions 为主，memory 为辅）
-- 提炼最佳实践 / 踩坑记录 / 有价值的模式
+### 经验提炼（每日凌晨 02:00）
+- 增量扫描最近 24 小时的对话记录（无新对话则跳过）
+- 每次最多提炼 3 条，宁精勿滥
 - 安全脱敏（只脱密钥/Token/密码/IP）
-- 提交到注册中心（API 调用，服务器定时同步到 GitHub）
+- 提交到注册中心（API 调用）
+- 限时 20 分钟
 
 ## 隐私保护
 
