@@ -311,7 +311,7 @@ find ~/Library/Application\ Support/CodeBuddy\ CN/ ~/Library/Application\ Suppor
 
 本次最多提炼 3 条，宁精勿滥。
 
-## 第三步：生成文件
+## 第三步：生成文件并保存到本地
 每条经验用独立 markdown 文件，包含 frontmatter：
 ---
 type: skill | pitfall | decision | insight
@@ -334,13 +334,12 @@ min_rank: junior | senior | expert
 保存到 ~/.claw/workspace/xiaoyao-contrib/contributions/{令牌号}/ 目录。
 文件命名：YYYY-MM-DD-序号-标题.md
 
-## 第四步：上传正典
-读取 ~/.codebuddy/skills/xiaoyao-pai/config/node.json 获取 token 和 api_base。
-对每个经验文件执行上传。
+保存到本地即可，不需要上传。下次心跳会自动上传到云端。
 
 ## 铁律
 - 没有值得提炼的内容就什么都不做，不要编造
-- 最多 3 条，20 分钟内必须结束'
+- 最多 3 条，20 分钟内必须结束
+- 只负责提炼和本地保存，不负责上传'
 
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-experience-am', '逍遥派经验提炼（上午）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=11;BYMINUTE=30', $NOW_MS, $NOW_MS, 'recurring', $EXP_AM_NEXT);" 2>/dev/null && \
