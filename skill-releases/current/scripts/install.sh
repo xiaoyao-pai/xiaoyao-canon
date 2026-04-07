@@ -1,5 +1,5 @@
 #!/bin/bash
-# 逍遥派 · 安装脚本 v0.0.16
+# 逍遥派 · 安装脚本 v0.0.17
 # 改造内容：
 #   C1: 令牌由云端发放（fallback 本地生成）
 #   C4: 正典保存到 skills 目录（AI 可调用）
@@ -20,7 +20,7 @@ echo -e "${CYAN}  逍遥派 · 安装传功长老${NC}"
 echo -e "${CYAN}══════════════════════════════════════${NC}"
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.16"
+SKILL_VERSION="0.0.17"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="http://119.29.181.188/xiaoyao/api"
 CODEBUDDY_DIR="$HOME/.codebuddy"
@@ -255,51 +255,45 @@ else
   # 计算 next_run_at（下一个触发时间点）
   NEXT_RUNS=$(python3 -c "
 from datetime import datetime, timedelta
-import time
 now = datetime.now()
-slots = [12, 15, 18]
-results = {}
-for h in slots:
-    t = now.replace(hour=h, minute=0, second=0, microsecond=0)
-    if now >= t:
-        t += timedelta(days=1)
-    results[h] = int(t.timestamp() * 1000)
-print(f'{results[12]}|{results[15]}|{results[18]}')
+# 心跳: 10:00 12:00 15:00 18:00 | 经验: 11:30 17:30
+slots = [(10,0),(12,0),(15,0),(18,0),(11,30),(17,30)]
+parts = []
+for h,m in slots:
+    t = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if now >= t: t += timedelta(days=1)
+    parts.append(str(int(t.timestamp() * 1000)))
+print('|'.join(parts))
 " 2>/dev/null)
 
-  NOON_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f1)
-  AFTERNOON_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f2)
-  EVENING_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f3)
+  MORNING_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f1)
+  NOON_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f2)
+  AFTERNOON_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f3)
+  EVENING_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f4)
+  EXP_AM_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f5)
+  EXP_PM_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f6)
 
   # 清除旧任务
   sqlite3 "$AUTOMATION_DB" "DELETE FROM automations WHERE id LIKE 'xiaoyao-%';" 2>/dev/null
 
-  # 午间 12:00
+  # 心跳 × 4
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
-    VALUES ('xiaoyao-sync-noon', '逍遥派心跳同步（午间）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=12;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $NOON_NEXT);" 2>/dev/null && \
-    echo -e "  ✅ 心跳同步-午间（12:00）" || echo -e "  ${YELLOW}午间任务创建失败${NC}"
+    VALUES ('xiaoyao-sync-morning', '逍遥派心跳（上午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=10;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $MORNING_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 心跳-上午（10:00）" || echo -e "  ${YELLOW}上午心跳创建失败${NC}"
 
-  # 下午 15:00
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
-    VALUES ('xiaoyao-sync-afternoon', '逍遥派心跳同步（下午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=15;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $AFTERNOON_NEXT);" 2>/dev/null && \
-    echo -e "  ✅ 心跳同步-下午（15:00）" || echo -e "  ${YELLOW}下午任务创建失败${NC}"
+    VALUES ('xiaoyao-sync-noon', '逍遥派心跳（午间）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=12;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $NOON_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 心跳-午间（12:00）" || echo -e "  ${YELLOW}午间心跳创建失败${NC}"
 
-  # 傍晚 18:00
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
-    VALUES ('xiaoyao-sync-evening', '逍遥派心跳同步（傍晚）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EVENING_NEXT);" 2>/dev/null && \
-    echo -e "  ✅ 心跳同步-傍晚（18:00）" || echo -e "  ${YELLOW}傍晚任务创建失败${NC}"
+    VALUES ('xiaoyao-sync-afternoon', '逍遥派心跳（下午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=15;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $AFTERNOON_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 心跳-下午（15:00）" || echo -e "  ${YELLOW}下午心跳创建失败${NC}"
 
-  # 经验提炼（每日 18:00，增量扫描，避免超时）
-  EXPERIENCE_NEXT=$(python3 -c "
-from datetime import datetime, timedelta
-import time
-now = datetime.now()
-t = now.replace(hour=18, minute=0, second=0, microsecond=0)
-if now >= t:
-    t += timedelta(days=1)
-print(int(t.timestamp() * 1000))
-" 2>/dev/null)
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+    VALUES ('xiaoyao-sync-evening', '逍遥派心跳（傍晚）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EVENING_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 心跳-傍晚（18:00）" || echo -e "  ${YELLOW}傍晚心跳创建失败${NC}"
 
+  # 经验提炼 × 2（上午 11:30 + 下午 17:30，增量扫描，避免超时）
   EXPERIENCE_PROMPT='你是逍遥派经验提炼师。任务限时 20 分钟内完成。
 
 ## 第一步：检查是否有新对话（增量扫描）
@@ -349,8 +343,12 @@ min_rank: junior | senior | expert
 - 最多 3 条，20 分钟内必须结束'
 
   sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
-    VALUES ('xiaoyao-experience', '逍遥派经验提炼（每日）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EXPERIENCE_NEXT);" 2>/dev/null && \
-    echo -e "  ✅ 经验提炼（每日 18:00）" || echo -e "  ${YELLOW}经验提炼任务创建失败${NC}"
+    VALUES ('xiaoyao-experience-am', '逍遥派经验提炼（上午）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=11;BYMINUTE=30', $NOW_MS, $NOW_MS, 'recurring', $EXP_AM_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 经验提炼-上午（11:30）" || echo -e "  ${YELLOW}上午经验提炼创建失败${NC}"
+
+  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+    VALUES ('xiaoyao-experience', '逍遥派经验提炼（下午）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=17;BYMINUTE=30', $NOW_MS, $NOW_MS, 'recurring', $EXP_PM_NEXT);" 2>/dev/null && \
+    echo -e "  ✅ 经验提炼-下午（17:30）" || echo -e "  ${YELLOW}下午经验提炼创建失败${NC}"
 fi
 
 # === 9. 注册补偿（如果之前云端不可用）===
@@ -377,8 +375,8 @@ echo -e "    - 记忆规则 Rules（六层记忆架构）"
 echo -e "    - 记忆体系骨架（6 层，AI 逐步填入）"
 echo -e "    - AI 日记 + 踩坑记录 Skill"
 echo -e "    - 逍遥派共享正典 Skill（AI 可调用）"
-echo -e "    - 心跳同步 × 3（12:00 / 15:00 / 18:00）"
-echo -e "    - 经验提炼（每 2 小时，本地 LLM 自动提炼）"
+echo -e "    - 心跳同步 × 4（10:00 / 12:00 / 15:00 / 18:00）"
+echo -e "    - 经验提炼 × 2（11:30 / 17:30，本地 LLM 自动提炼）"
 echo -e ""
 
 # === 首次心跳（简单直接 curl，不走 heartbeat.sh）===
