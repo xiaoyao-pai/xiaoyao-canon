@@ -7,7 +7,7 @@ SKILL_DIR="$HOME/.codebuddy/skills/xiaoyao-pai"
 NODE_CONFIG="$SKILL_DIR/config/node.json"
 
 TOKEN=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG'))['token'])" 2>/dev/null)
-API_BASE=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG')).get('api_base', 'http://119.29.181.188/xiaoyao/api'))" 2>/dev/null)
+API_BASE=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG')).get('api_base', 'https://ai-mas.art/xiaoyao/api'))" 2>/dev/null)
 
 if [ -z "$TOKEN" ]; then echo "错误: 未找到节点配置"; exit 1; fi
 

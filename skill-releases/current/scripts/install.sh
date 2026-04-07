@@ -28,7 +28,7 @@ echo -e "${CYAN}═════════════════════�
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
 SKILL_VERSION="0.0.17"
 INSTALL_DATE=$(date +%Y-%m-%d)
-API_BASE="http://119.29.181.188/xiaoyao/api"
+API_BASE="https://ai-mas.art/xiaoyao/api"
 CODEBUDDY_DIR="$HOME/.codebuddy"
 SKILL_DIR="$CODEBUDDY_DIR/skills/xiaoyao-pai"
 RULES_DIR="$CODEBUDDY_DIR/rules"

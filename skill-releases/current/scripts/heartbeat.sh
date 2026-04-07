@@ -11,7 +11,7 @@ CANON_SKILL_DIR="$HOME/.codebuddy/skills/xiaoyao-canon-practices"
 
 # 读取配置
 TOKEN=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG'))['token'])" 2>/dev/null)
-API_BASE=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG')).get('api_base', 'http://119.29.181.188/xiaoyao/api'))" 2>/dev/null)
+API_BASE=$(python3 -c "import json; print(json.load(open('$NODE_CONFIG')).get('api_base', 'https://ai-mas.art/xiaoyao/api'))" 2>/dev/null)
 
 # 读取版本号
 LOCAL_VERSION=$(python3 -c "

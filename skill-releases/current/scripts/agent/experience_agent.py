@@ -148,7 +148,7 @@ def main():
 
     config = get_node_config()
     token = config["token"]
-    api_base = config.get("api_base", "http://119.29.181.188/xiaoyao/api")
+    api_base = config.get("api_base", "https://ai-mas.art/xiaoyao/api")
     print(f"[经验提炼] 令牌号: {token}")
 
     # 收集数据
