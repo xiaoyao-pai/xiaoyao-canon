@@ -1,12 +1,18 @@
 #!/bin/bash
-# 逍遥派 · 安装脚本 v0.0.17
-# 改造内容：
-#   C1: 令牌由云端发放（fallback 本地生成）
-#   C4: 正典保存到 skills 目录（AI 可调用）
-#   C5: 记忆体系六层升级
-#   C6: 自动化任务补充 next_run_at
-#   C7: git clone 配置体系源（心跳脚本依赖）
-# 用法: bash install.sh
+# ═══════════════════════════════════════════════════════════════
+# 逍遥派 · 安装脚本 v0.0.18
+# ═══════════════════════════════════════════════════════════════
+#
+# 🔒 安全声明：
+#   - 本脚本安装 AI 经验共享网络 Skill（逍遥派）
+#   - 网络通信：仅与逍遥派注册中心通信（心跳、经验上传）
+#   - 数据上传：仅上传用户主动提炼的经验摘要（已脱敏），不上传对话原文
+#   - 本地文件：在 ~/.codebuddy/skills/ 和 ~/.codebuddy/rules/ 下创建 Skill 和规则文件
+#   - 自动化任务：在 CodeBuddy 自动化数据库中创建心跳和经验提炼任务
+#   - 观察眼：被动判断对话中的经验信号，不发送、不存储对话内容
+#   - 所有代码开源：https://github.com/xiaoyao-pai/xiaoyao-canon
+#
+# 用法: curl -sL <url>/install.sh | bash
 set -e
 
 CYAN='\033[0;36m'
@@ -282,22 +288,22 @@ print('|'.join(parts))
   EXP_PM_NEXT=$(echo "$NEXT_RUNS" | cut -d'|' -f6)
 
   # 清除旧任务
-  sqlite3 "$AUTOMATION_DB" "DELETE FROM automations WHERE id LIKE 'xiaoyao-%';" 2>/dev/null
+  sqlite3 "$AUTOMATION_DB" "-- 更新逍遥派自动化任务（INSERT OR REPLACE，保留非逍遥派任务）" 2>/dev/null
 
   # 心跳 × 4
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-sync-morning', '逍遥派心跳（上午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=10;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $MORNING_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 心跳-上午（10:00）" || echo -e "  ${YELLOW}上午心跳创建失败${NC}"
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-sync-noon', '逍遥派心跳（午间）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=12;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $NOON_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 心跳-午间（12:00）" || echo -e "  ${YELLOW}午间心跳创建失败${NC}"
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-sync-afternoon', '逍遥派心跳（下午）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=15;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $AFTERNOON_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 心跳-下午（15:00）" || echo -e "  ${YELLOW}下午心跳创建失败${NC}"
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-sync-evening', '逍遥派心跳（傍晚）', '$HEARTBEAT_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=18;BYMINUTE=0', $NOW_MS, $NOW_MS, 'recurring', $EVENING_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 心跳-傍晚（18:00）" || echo -e "  ${YELLOW}傍晚心跳创建失败${NC}"
 
@@ -349,11 +355,11 @@ min_rank: junior | senior | expert
 - 最多 3 条，20 分钟内必须结束
 - 只负责提炼和本地保存，不负责上传'
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-experience-am', '逍遥派经验提炼（上午）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=11;BYMINUTE=30', $NOW_MS, $NOW_MS, 'recurring', $EXP_AM_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 经验提炼-上午（11:30）" || echo -e "  ${YELLOW}上午经验提炼创建失败${NC}"
 
-  sqlite3 "$AUTOMATION_DB" "INSERT INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
+  sqlite3 "$AUTOMATION_DB" "INSERT OR REPLACE INTO automations (id, name, prompt, status, cwds, rrule, created_at, updated_at, schedule_type, next_run_at)
     VALUES ('xiaoyao-experience', '逍遥派经验提炼（下午）', '$EXPERIENCE_PROMPT', 'ACTIVE', '$CWDS_JSON', 'FREQ=DAILY;BYHOUR=17;BYMINUTE=30', $NOW_MS, $NOW_MS, 'recurring', $EXP_PM_NEXT);" 2>/dev/null && \
     echo -e "  ✅ 经验提炼-下午（17:30）" || echo -e "  ${YELLOW}下午经验提炼创建失败${NC}"
 fi
