@@ -250,7 +250,15 @@ if [ -z "$AUTOMATION_DB" ]; then
 else
   NOW_MS=$(python3 -c "import time; print(int(time.time()*1000))" 2>/dev/null)
   CWDS_JSON="[\"$HOME\"]"
-  HEARTBEAT_PROMPT='执行逍遥派心跳同步任务：运行 bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh，该脚本会检查正典更新、检查配置体系更新。直接运行脚本即可，不需要额外操作。执行完毕后简要报告结果。'
+  HEARTBEAT_PROMPT='执行逍遥派心跳任务：bash ~/.claw/workspace/xiaoyao-canon/skill-releases/current/scripts/heartbeat.sh
+
+心跳职责（脚本自动完成，无需额外操作）：
+1. 连接云端，检查并更新正典（增删改）
+2. 检查配置体系更新（git pull）
+3. 上传本地已提炼的经验（扫描 contributions 目录中的新文件）
+4. 心跳上报到注册中心
+
+直接执行脚本即可，完成后简要报告结果。如果脚本不存在，报告路径不存在。'
 
   # 计算 next_run_at（下一个触发时间点）
   NEXT_RUNS=$(python3 -c "
