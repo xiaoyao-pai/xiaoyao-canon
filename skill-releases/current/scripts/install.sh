@@ -483,6 +483,6 @@ curl -s -m 10 -X POST "$API_BASE/heartbeat" \
   echo -e "  首次心跳完成 ✅" || echo -e "  ${YELLOW}首次心跳失败（不影响使用，后续自动重试）${NC}"
 
 echo -e ""
-echo -e "  ${YELLOW}下一步${NC}: 正常使用 AI 即可，一切自动运行。"
-echo -e "  自动审批已开启，心跳和经验提炼将自动执行，无需手动确认。"
+echo -e "${RED}  ⚠️  请重启 CodeBuddy / WorkBuddy 让配置生效！${NC}"
+echo -e "  ${YELLOW}关闭后重新打开即可，心跳和经验提炼将自动运行，无需手动确认。${NC}"
 echo -e ""
