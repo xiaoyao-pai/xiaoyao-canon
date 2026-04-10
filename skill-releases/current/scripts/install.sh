@@ -26,7 +26,7 @@ echo -e "${CYAN}  逍遥派 · 安装传功长老${NC}"
 echo -e "${CYAN}══════════════════════════════════════${NC}"
 
 DEVICE_NAME=$(scutil --get ComputerName 2>/dev/null || hostname -s 2>/dev/null || hostname | head -c 50)
-SKILL_VERSION="0.0.17"
+SKILL_VERSION="0.0.18"
 INSTALL_DATE=$(date +%Y-%m-%d)
 API_BASE="https://ai-mas.art/xiaoyao/api"
 CODEBUDDY_DIR="$HOME/.codebuddy"
