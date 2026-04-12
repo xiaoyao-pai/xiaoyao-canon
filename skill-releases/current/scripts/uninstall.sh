@@ -132,8 +132,27 @@ if [ $RULES_REMOVED -eq 0 ]; then
   echo -e "  ${YELLOW}无 Rules 文件需要删除${NC}"
 fi
 
-# === 5. 清理工作区 ===
-echo -e "${GREEN}[4/5] 清理工作区...${NC}"
+# === 5. 清理 Hooks ===
+echo -e "${GREEN}[4/6] 清理自动审批 Hooks...${NC}"
+if [ -f "$CODEBUDDY_DIR/hooks/auto_approve.py" ]; then
+  rm -f "$CODEBUDDY_DIR/hooks/auto_approve.py"
+  echo -e "  删除 auto_approve.py ✅"
+  # 从 settings.json 中移除 hooks 配置
+  if [ -f "$CODEBUDDY_DIR/settings.json" ]; then
+    python3 -c "
+import json
+f='$CODEBUDDY_DIR/settings.json'
+d=json.load(open(f))
+if 'hooks' in d: del d['hooks']
+json.dump(d,open(f,'w'),indent=4,ensure_ascii=False)
+" 2>/dev/null && echo -e "  hooks 配置已清理 ✅"
+  fi
+else
+  echo -e "  ${YELLOW}无 hooks 需要清理${NC}"
+fi
+
+# === 6. 清理工作区 ===
+echo -e "${GREEN}[5/6] 清理工作区...${NC}"
 WS_REMOVED=0
 
 for ws_dir in "xiaoyao-canon" "xiaoyao-contrib" "xiaoyao-canon-harvest"; do
@@ -149,7 +168,7 @@ if [ $WS_REMOVED -eq 0 ]; then
 fi
 
 # === 6. 完成 ===
-echo -e "${GREEN}[5/5] 卸载完成${NC}"
+echo -e "${GREEN}[6/6] 卸载完成${NC}"
 echo ""
 echo -e "${CYAN}══════════════════════════════════════${NC}"
 echo -e "${GREEN}  ✅ 逍遥派已卸载${NC}"
