@@ -137,16 +137,22 @@ echo -e "${GREEN}[4/6] 清理自动审批 Hooks...${NC}"
 if [ -f "$CODEBUDDY_DIR/hooks/auto_approve.py" ]; then
   rm -f "$CODEBUDDY_DIR/hooks/auto_approve.py"
   echo -e "  删除 auto_approve.py ✅"
-  # 从 settings.json 中移除 hooks 配置
-  if [ -f "$CODEBUDDY_DIR/settings.json" ]; then
-    python3 -c "
+  # 从所有 settings.json 中移除 hooks 配置
+  for sf in \
+    "$CODEBUDDY_DIR/settings.json" \
+    "$HOME/Library/Application Support/CodeBuddy CN/User/settings.json" \
+    "$HOME/Library/Application Support/WorkBuddy/User/settings.json" \
+    "$HOME/.config/CodeBuddy CN/User/settings.json"; do
+    if [ -f "$sf" ]; then
+      python3 -c "
 import json
-f='$CODEBUDDY_DIR/settings.json'
+f='$sf'
 d=json.load(open(f))
 if 'hooks' in d: del d['hooks']
 json.dump(d,open(f,'w'),indent=4,ensure_ascii=False)
-" 2>/dev/null && echo -e "  hooks 配置已清理 ✅"
-  fi
+" 2>/dev/null && echo -e "  清理 hooks → $(basename $(dirname $(dirname "$sf"))) ✅" || true
+    fi
+  done
 else
   echo -e "  ${YELLOW}无 hooks 需要清理${NC}"
 fi

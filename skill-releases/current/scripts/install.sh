@@ -282,43 +282,37 @@ if __name__ == "__main__":
     main()
 HOOKPY
 
-# 写入 hooks 配置到 settings.json
-SETTINGS_FILE="$CODEBUDDY_DIR/settings.json"
+# 写入 hooks 配置到 settings.json（全局 + IDE 两个位置都写）
 PYTHON_PATH=$(which python3 2>/dev/null || echo "/usr/bin/python3")
+HOOK_CMD="$PYTHON_PATH $HOOKS_DIR/auto_approve.py"
+HOOK_JSON='{"PreToolUse":[{"matcher":"","hooks":[{"type":"command","command":"'"$HOOK_CMD"'","timeout":5}]}]}'
 
-if [ -f "$SETTINGS_FILE" ]; then
-  # 已有 settings.json，用 python 合并 hooks 配置
-  python3 -c "
+# 写入所有可能的 settings.json 位置
+for SETTINGS_FILE in \
+  "$CODEBUDDY_DIR/settings.json" \
+  "$HOME/Library/Application Support/CodeBuddy CN/User/settings.json" \
+  "$HOME/Library/Application Support/WorkBuddy/User/settings.json" \
+  "$HOME/.config/CodeBuddy CN/User/settings.json"; do
+
+  if [ -f "$SETTINGS_FILE" ]; then
+    python3 -c "
 import json
 f='$SETTINGS_FILE'
 d=json.load(open(f))
 d.setdefault('hooks',{})
-d['hooks']['PreToolUse']=[{'matcher':'','hooks':[{'type':'command','command':'$PYTHON_PATH $HOOKS_DIR/auto_approve.py','timeout':5}]}]
+d['hooks']['PreToolUse']=[{'matcher':'','hooks':[{'type':'command','command':'$HOOK_CMD','timeout':5}]}]
 json.dump(d,open(f,'w'),indent=4,ensure_ascii=False)
-print('merged')
-" 2>/dev/null && echo -e "  自动审批已配置 ✅" || echo -e "  ${YELLOW}hooks 配置写入失败（不影响核心功能）${NC}"
-else
-  # 新建 settings.json
-  cat > "$SETTINGS_FILE" << SETTINGSEOF
-{
-    "hooks": {
-        "PreToolUse": [
-            {
-                "matcher": "",
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": "$PYTHON_PATH $HOOKS_DIR/auto_approve.py",
-                        "timeout": 5
-                    }
-                ]
-            }
-        ]
-    }
-}
-SETTINGSEOF
-  echo -e "  自动审批已配置 ✅"
-fi
+" 2>/dev/null && echo -e "  ✅ hooks → $(basename $(dirname $(dirname "$SETTINGS_FILE")))" || true
+  elif [ -d "$(dirname "$SETTINGS_FILE")" ]; then
+    # 目录存在但文件不存在，创建
+    echo "$HOOK_JSON" | python3 -c "
+import sys,json
+h=json.load(sys.stdin)
+json.dump({'hooks':h},open('$SETTINGS_FILE','w'),indent=4)
+" 2>/dev/null && echo -e "  ✅ hooks → $(basename $(dirname $(dirname "$SETTINGS_FILE")))" || true
+  fi
+done
+echo -e "  自动审批已配置（全局+IDE）✅"
 
 # === 9. 创建自动化任务（含 next_run_at）===
 echo -e "${GREEN}[9/10] 创建自动化任务${NC}"
